@@ -32,7 +32,7 @@ export const backgrounds: Background[] = [
     name: 'Your Story',
     description: 'Be part of Sitecore\'s 25-year legacy',
     imageUrl: '/your-story.svg',
-    category: 'community',
+    category: 'celebration',
   },
 ];
 
