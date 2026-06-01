@@ -32,7 +32,7 @@ interface PhotoBoothState {
   photoId: string | null;
   photoCode: string | null;
 
-  setCompositedPhoto: (url: string, photoId: string, photoCode: string) => void;
+  setCompositedPhoto: (url: string, photoId?: string, photoCode?: string) => void;
   resetResult: () => void;
 
   // Overall reset
@@ -80,11 +80,11 @@ export const usePhotoBoothStore = create<PhotoBoothState>((set) => ({
 
   setProcessingError: (error) => set({ processingError: error }),
 
-  setCompositedPhoto: (url, photoId, photoCode) =>
+  setCompositedPhoto: (url, photoId?: string, photoCode?: string) =>
     set({
       compositedPhotoUrl: url,
-      photoId,
-      photoCode,
+      ...(photoId && { photoId }),
+      ...(photoCode && { photoCode }),
       isProcessing: false,
       processingStep: null,
       processingError: null,
