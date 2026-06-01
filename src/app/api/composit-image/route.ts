@@ -104,11 +104,11 @@ export async function POST(request: NextRequest) {
     // Call Gemini API with image
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
-      systemInstruction: 'You are an expert image editor. Process the user\'s photo with creative enhancements while keeping the person recognizable. Return only the edited image.',
     });
 
     // Build the request with proper image handling
-    const requestContent: any[] = [fullPrompt];
+    const systemPrompt = 'You are an expert image editor. Process the user\'s photo with creative enhancements while keeping the person recognizable. Return only the edited image.';
+    const requestContent: any[] = [`${systemPrompt}\n\n${fullPrompt}`];
 
     // Add user photo
     requestContent.push({
