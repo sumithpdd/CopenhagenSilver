@@ -173,8 +173,11 @@ export async function POST(request: NextRequest) {
 
     // Enhance the image with Sharp effects and text overlay
     console.log('⚙️ [API] Applying enhancements...');
+    console.log('⚙️ [API] Prompt for enhancement:', prompt);
+    console.log('⚙️ [API] Background description:', backgroundDescription);
     const enhancedBase64 = await enhanceImage(photoBase64, prompt, backgroundDescription);
     console.log('✅ [API] Enhancement returned, size:', enhancedBase64.length);
+    console.log('✅ [API] First 100 chars of result:', enhancedBase64.substring(0, 100));
 
     // Ensure base64 is properly formatted
     const finalBase64 = enhancedBase64.includes('data:')
