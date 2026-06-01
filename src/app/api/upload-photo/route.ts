@@ -31,8 +31,13 @@ function generatePhotoCode(): string {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔗 [API] /api/upload-photo called');
+
     initializeFirebase();
+    console.log('✅ [API] Firebase initialized');
+
     const formData = await request.formData();
+    console.log('📥 [API] FormData keys:', Array.from(formData.keys()));
 
     const sessionId = formData.get('sessionId') as string;
     const userName = formData.get('userName') as string;
@@ -42,42 +47,64 @@ export async function POST(request: NextRequest) {
     const backgroundId = formData.get('backgroundId') as string;
     const promptId = formData.get('promptId') as string;
 
+    console.log('✅ [API] sessionId:', sessionId || 'MISSING');
+    console.log('✅ [API] userName:', userName || 'MISSING');
+    console.log('✅ [API] originalPhoto:', originalPhotoBase64 ? 'YES' : 'MISSING');
+    console.log('✅ [API] compositedPhoto:', compositedPhotoBase64 ? 'YES' : 'MISSING');
+    console.log('✅ [API] backgroundId:', backgroundId || 'MISSING');
+    console.log('✅ [API] promptId:', promptId || 'MISSING');
+
     if (!sessionId || !userName || !originalPhotoBase64 || !compositedPhotoBase64) {
+      console.error('❌ [API] Missing required fields');
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
+    console.log('📤 [API] Starting upload...');
+
     const photoCode = generatePhotoCode();
     const timestamp = Date.now();
     const photoId = `${sessionId}_${timestamp}`;
 
     // Upload original photo
+    console.log('📤 [API] Uploading original photo...');
     const originalBuffer = Buffer.from(
       originalPhotoBase64.split(',')[1],
       'base64'
     );
+    console.log('✅ [API] Original buffer size:', originalBuffer.length);
+
     const originalFile = bucket!.file(
       `sitecore-silver/${sessionId}/original_${timestamp}.jpg`
     );
     await originalFile.save(originalBuffer, { contentType: 'image/jpeg' });
+    console.log('✅ [API] Original photo saved to Storage');
 
     // Upload composited photo
+    console.log('📤 [API] Uploading composited photo...');
     const compositedBuffer = Buffer.from(
       compositedPhotoBase64.split(',')[1],
       'base64'
     );
+    console.log('✅ [API] Composited buffer size:', compositedBuffer.length);
+
     const compositedFile = bucket!.file(
       `sitecore-silver/${sessionId}/composited_${timestamp}.jpg`
     );
     await compositedFile.save(compositedBuffer, { contentType: 'image/jpeg' });
+    console.log('✅ [API] Composited photo saved to Storage');
 
     // Get download URLs
+    console.log('🔗 [API] Getting public URLs...');
     const originalPhotoUrl = await originalFile.publicUrl();
     const compositedPhotoUrl = await compositedFile.publicUrl();
+    console.log('✅ [API] Original URL:', originalPhotoUrl);
+    console.log('✅ [API] Composited URL:', compositedPhotoUrl);
 
     // Save metadata to Firestore
+    console.log('💾 [API] Saving to Firestore...');
     const photoData: PhotoBoothPhoto = {
       id: photoId,
       sessionId,
@@ -94,7 +121,11 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    console.log('📝 [API] Photo data:', photoData);
     await db!.collection('photobooth').doc(photoId).set(photoData);
+    console.log('✅ [API] Saved to Firestore collection: photobooth');
+
+    console.log('✅ [API] Upload complete! Photo code:', photoCode);
 
     return NextResponse.json({
       success: true,

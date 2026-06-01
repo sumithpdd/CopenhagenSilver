@@ -6,13 +6,17 @@ import sharp from 'sharp';
  */
 async function enhanceImage(imageBase64: string, prompt: string, background: string): Promise<string> {
   try {
+    console.log('🎨 [ENHANCE] Starting image enhancement');
+
     // Convert base64 to buffer
     const imageBuffer = Buffer.from(imageBase64, 'base64');
+    console.log('✅ [ENHANCE] Buffer created, size:', imageBuffer.length);
 
     // Get image metadata
     const metadata = await sharp(imageBuffer).metadata();
     const width = metadata.width || 1200;
     const height = metadata.height || 800;
+    console.log('✅ [ENHANCE] Image dimensions:', width, 'x', height);
 
     // Apply theme-based effects
     let enhanced = sharp(imageBuffer);
@@ -83,6 +87,7 @@ async function enhanceImage(imageBase64: string, prompt: string, background: str
       .toBuffer();
 
     // Composite the enhanced image with banner
+    console.log('🎨 [ENHANCE] Creating text banner...');
     const result = await enhanced
       .composite([
         {
@@ -94,25 +99,39 @@ async function enhanceImage(imageBase64: string, prompt: string, background: str
       .jpeg({ quality: 95 })
       .toBuffer();
 
-    return result.toString('base64');
+    console.log('✅ [ENHANCE] Final image size:', result.length);
+    const base64Result = result.toString('base64');
+    console.log('✅ [ENHANCE] Base64 created, length:', base64Result.length);
+
+    return base64Result;
   } catch (error) {
-    console.error('❌ Enhancement error:', error);
+    console.error('❌ [ENHANCE] Enhancement error:', error);
     throw error;
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { photo, backgroundDescription, prompt, background } = await request.json();
+    console.log('🔗 [API] /api/composit-image called');
+
+    const body = await request.json();
+    console.log('📥 [API] Body keys:', Object.keys(body));
+
+    const { photo, backgroundDescription, prompt, background } = body;
+
+    console.log('✅ [API] Photo:', photo ? `${photo.substring(0, 50)}...` : 'MISSING');
+    console.log('✅ [API] Prompt:', prompt || 'MISSING');
+    console.log('✅ [API] Background:', backgroundDescription || 'NONE');
 
     if (!photo || !prompt) {
+      console.error('❌ [API] Missing required fields');
       return NextResponse.json(
         { success: false, error: 'Missing required fields: photo and prompt' },
         { status: 400 }
       );
     }
 
-    console.log('🎨 Starting image enhancement...');
+    console.log('🎨 [API] Starting image enhancement...');
 
     // Extract base64 from data URL if needed
     const photoBase64 =
@@ -124,24 +143,28 @@ export async function POST(request: NextRequest) {
     console.log('🎭 Background:', backgroundDescription);
 
     // Enhance the image with Sharp effects and text overlay
-    console.log('⚙️ Applying enhancements...');
+    console.log('⚙️ [API] Applying enhancements...');
     const enhancedBase64 = await enhanceImage(photoBase64, prompt, backgroundDescription);
+    console.log('✅ [API] Enhancement returned, size:', enhancedBase64.length);
 
     // Ensure base64 is properly formatted
     const finalBase64 = enhancedBase64.includes('data:')
       ? enhancedBase64
       : `data:image/jpeg;base64,${enhancedBase64}`;
 
-    console.log('✅ Enhancement completed!');
+    console.log('✅ [API] Enhancement completed! Response size:', finalBase64.length);
 
     // Return the result
-    return NextResponse.json({
+    const response = {
       success: true,
       data: {
         compositedPhoto: finalBase64,
         timestamp: new Date().toISOString(),
       },
-    });
+    };
+
+    console.log('📤 [API] Returning success response');
+    return NextResponse.json(response);
   } catch (error) {
     console.error('❌ Error processing image:', error);
 

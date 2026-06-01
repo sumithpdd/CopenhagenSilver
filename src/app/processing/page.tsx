@@ -22,69 +22,93 @@ export default function ProcessingPage() {
     }
   }, [session, capturedPhoto, selectedBackground, selectedPrompt, router]);
 
-  // Process image with Gemini API
+  // Process image with Sharp enhancement
   useEffect(() => {
     async function processImage() {
       try {
-        console.log('🎨 Processing image with Gemini...');
+        console.log('🚀 PROCESSING START');
+        console.log('📸 Photo:', capturedPhoto ? 'YES' : 'NO');
+        console.log('🎭 Background:', selectedBackground?.name || 'NONE');
+        console.log('✨ Prompt:', selectedPrompt?.title || 'NONE');
+        console.log('👤 Session:', session?.sessionId || 'NONE');
 
-        const response = await fetch('/api/composit-image', {
+        if (!capturedPhoto || !selectedBackground || !selectedPrompt) {
+          throw new Error('Missing required data for processing');
+        }
+
+        // Step 1: Enhance image
+        console.log('🎨 Step 1: Calling /api/composit-image...');
+        const enhanceResponse = await fetch('/api/composit-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             photo: capturedPhoto,
-            backgroundDescription: selectedBackground?.description || '',
-            prompt: selectedPrompt?.description || selectedPrompt?.title || '',
+            backgroundDescription: selectedBackground.description,
+            prompt: selectedPrompt.description || selectedPrompt.title,
           }),
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to process image');
+        console.log('📡 Response status:', enhanceResponse.status);
+        const enhanceText = await enhanceResponse.text();
+        console.log('📄 Raw response:', enhanceText.substring(0, 200));
+
+        if (!enhanceResponse.ok) {
+          throw new Error(`Enhance API failed: ${enhanceResponse.status} - ${enhanceText}`);
         }
 
-        const result = await response.json();
+        const enhanceResult = JSON.parse(enhanceText);
+        console.log('✅ Enhance result:', enhanceResult.success ? 'SUCCESS' : 'FAILED');
 
-        if (result.success && result.data?.compositedPhoto) {
-          console.log('✅ Image processed successfully');
-          setCompositedPhoto(result.data.compositedPhoto);
+        if (!enhanceResult.success) {
+          throw new Error(enhanceResult.error || 'Enhancement failed');
+        }
 
-          // Upload to Firebase
-          console.log('📤 Uploading to Firebase...');
-          const uploadFormData = new FormData();
-          uploadFormData.append('sessionId', session!.sessionId);
-          uploadFormData.append('userName', session!.userName);
-          uploadFormData.append('userEmail', session!.userEmail || '');
-          uploadFormData.append('originalPhoto', capturedPhoto!);
-          uploadFormData.append('compositedPhoto', result.data.compositedPhoto);
-          uploadFormData.append('backgroundId', selectedBackground!.id);
-          uploadFormData.append('promptId', selectedPrompt!.id);
+        const compositedPhoto = enhanceResult.data?.compositedPhoto;
+        if (!compositedPhoto) {
+          throw new Error('No composited photo in response');
+        }
 
-          const uploadResponse = await fetch('/api/upload-photo', {
-            method: 'POST',
-            body: uploadFormData,
-          });
+        console.log('✅ Image enhanced successfully');
+        setCompositedPhoto(compositedPhoto);
 
-          const uploadResult = await uploadResponse.json();
-          if (uploadResult.success) {
-            console.log('✅ Upload successful:', uploadResult.data);
-          } else {
-            console.warn('⚠️ Upload warning:', uploadResult.error);
-          }
+        // Step 2: Upload to Firebase
+        console.log('📤 Step 2: Calling /api/upload-photo...');
+        const uploadFormData = new FormData();
+        uploadFormData.append('sessionId', session!.sessionId);
+        uploadFormData.append('userName', session!.userName);
+        uploadFormData.append('userEmail', session!.userEmail || '');
+        uploadFormData.append('originalPhoto', capturedPhoto);
+        uploadFormData.append('compositedPhoto', compositedPhoto);
+        uploadFormData.append('backgroundId', selectedBackground.id);
+        uploadFormData.append('promptId', selectedPrompt.id);
 
-          // Redirect to result page after a short delay
-          setTimeout(() => {
-            router.push('/result');
-          }, 1500);
+        const uploadResponse = await fetch('/api/upload-photo', {
+          method: 'POST',
+          body: uploadFormData,
+        });
+
+        console.log('📡 Upload response status:', uploadResponse.status);
+        const uploadText = await uploadResponse.text();
+        console.log('📄 Upload raw response:', uploadText.substring(0, 200));
+
+        if (!uploadResponse.ok) {
+          console.warn('⚠️ Upload failed but continuing:', uploadResponse.status);
         } else {
-          throw new Error('No image data returned from API');
+          const uploadResult = JSON.parse(uploadText);
+          console.log('✅ Upload result:', uploadResult.success ? 'SUCCESS' : uploadResult.error);
         }
+
+        // Step 3: Redirect to result
+        console.log('📍 Redirecting to /result...');
+        setTimeout(() => {
+          router.push('/result');
+        }, 1000);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-        console.error('❌ Processing error:', errorMsg);
+        console.error('❌ PROCESSING FAILED:', errorMsg);
+        console.error('Full error:', err);
         setError(errorMsg);
 
-        // Show error for 3 seconds then go back
         setTimeout(() => {
           router.push('/prompts');
         }, 3000);
@@ -92,9 +116,16 @@ export default function ProcessingPage() {
     }
 
     if (capturedPhoto && selectedBackground && selectedPrompt) {
+      console.log('📊 Dependencies ready, starting processImage()');
       processImage();
+    } else {
+      console.log('⏳ Waiting for dependencies:', {
+        photo: !!capturedPhoto,
+        bg: !!selectedBackground,
+        prompt: !!selectedPrompt,
+      });
     }
-  }, [capturedPhoto, selectedBackground, selectedPrompt, router, setCompositedPhoto]);
+  }, [capturedPhoto, selectedBackground, selectedPrompt, router, setCompositedPhoto, session]);
 
   if (!session || !capturedPhoto || !selectedBackground || !selectedPrompt)
     return null;
