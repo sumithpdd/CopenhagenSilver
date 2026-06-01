@@ -1,35 +1,59 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface GalleryPhoto {
+  id: string;
+  photoCode: string;
+  userName: string;
+  backgroundId: string;
+  promptId: string;
+  compositedPhotoUrl: string;
+  createdAt: string;
+}
 
 export default function GalleryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [galleryPhotos, setGalleryPhotos] = useState<GalleryPhoto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Placeholder gallery data
-  const galleryPhotos = [
-    {
-      id: 1,
-      code: 'SILVER1A2B3C4D',
-      userName: 'John Doe',
-      backgroundId: 'heritage',
-      promptTitle: '25 Years Strong',
-      imageUrl: '/logo.jpg', // Placeholder
-    },
-    {
-      id: 2,
-      code: 'SILVER2E5F6G7H',
-      userName: 'Jane Smith',
-      backgroundId: 'celebration',
-      promptTitle: 'Celebrating Together',
-      imageUrl: '/logo.jpg', // Placeholder
-    },
-  ];
+  // Fetch photos from Firebase
+  useEffect(() => {
+    async function fetchPhotos() {
+      try {
+        console.log('📸 Fetching gallery photos...');
+        const response = await fetch('/api/gallery?limit=100&offset=0');
+
+        if (!response.ok) {
+          throw new Error(`Gallery API error: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Gallery fetched:', result);
+
+        if (result.success && result.data?.photos) {
+          setGalleryPhotos(result.data.photos);
+        } else {
+          setGalleryPhotos([]);
+        }
+      } catch (err) {
+        console.error('❌ Error fetching gallery:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load gallery');
+        setGalleryPhotos([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPhotos();
+  }, []);
 
   const filteredPhotos = galleryPhotos.filter((photo) => {
     const matchesSearch =
-      photo.code.includes(searchQuery.toUpperCase()) ||
+      photo.photoCode.includes(searchQuery.toUpperCase()) ||
       photo.userName.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory =
@@ -96,8 +120,25 @@ export default function GalleryPage() {
             ))}
           </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center py-12">
+              <div className="animate-spin inline-block">
+                <div className="w-12 h-12 border-4 border-silver-400 border-t-transparent rounded-full" />
+              </div>
+              <p className="text-silver-300 mt-4">Loading gallery...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <div className="text-center py-12 bg-red-900 bg-opacity-20 rounded p-6">
+              <p className="text-red-400">❌ {error}</p>
+            </div>
+          )}
+
           {/* Photos Grid */}
-          {filteredPhotos.length > 0 ? (
+          {!loading && filteredPhotos.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {filteredPhotos.map((photo) => (
                 <div
@@ -107,8 +148,8 @@ export default function GalleryPage() {
                   {/* Image */}
                   <div className="relative w-full h-48 bg-black">
                     <img
-                      src={photo.imageUrl}
-                      alt={photo.code}
+                      src={photo.compositedPhotoUrl}
+                      alt={photo.photoCode}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -118,9 +159,9 @@ export default function GalleryPage() {
 
                   {/* Info */}
                   <div className="absolute inset-0 flex flex-col justify-end p-3">
-                    <p className="text-xs text-silver-200">{photo.code}</p>
+                    <p className="text-xs text-silver-200">{photo.photoCode}</p>
                     <p className="font-bold text-white">{photo.userName}</p>
-                    <p className="text-xs text-silver-300">{photo.promptTitle}</p>
+                    <p className="text-xs text-silver-300">{new Date(photo.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
               ))}

@@ -18,27 +18,56 @@ async function enhanceImage(imageBase64: string, prompt: string, background: str
     const height = metadata.height || 800;
     console.log('✅ [ENHANCE] Image dimensions:', width, 'x', height);
 
-    // Apply theme-based effects
+    // Apply theme-based effects with stronger transformations
     let enhanced = sharp(imageBuffer);
+    const promptLower = prompt.toLowerCase();
+    const bgLower = background.toLowerCase();
 
-    // Apply effects based on prompt theme
-    if (prompt.toLowerCase().includes('heritage') || background.toLowerCase().includes('heritage')) {
-      // Add sepia/vintage effect
-      enhanced = enhanced.modulate({
-        brightness: 1.05,
-        saturation: 0.8,
-      });
-    } else if (prompt.toLowerCase().includes('innovation') || background.toLowerCase().includes('innovation')) {
-      // Enhance colors for tech vibe
-      enhanced = enhanced.modulate({
-        brightness: 1.02,
-        saturation: 1.15,
-      });
-    } else if (prompt.toLowerCase().includes('celebration') || background.toLowerCase().includes('celebration')) {
-      // Bright, vibrant effect
+    console.log('🎨 [ENHANCE] Prompt keywords:', promptLower);
+
+    // Heritage theme: Vintage/sepia effect
+    if (promptLower.includes('heritage') || promptLower.includes('vintage') || promptLower.includes('history') || bgLower.includes('heritage')) {
+      console.log('🎨 [ENHANCE] Applying HERITAGE effect');
+      enhanced = enhanced
+        .modulate({
+          brightness: 1.1,
+          saturation: 0.5, // Desaturate for vintage
+          hue: 15, // Warm tone
+        })
+        .blur(0.3); // Slight film grain effect
+    }
+
+    // Innovation theme: High tech/contrast effect
+    else if (promptLower.includes('innovation') || promptLower.includes('future') || promptLower.includes('tech') || bgLower.includes('innovation')) {
+      console.log('🎨 [ENHANCE] Applying INNOVATION effect');
+      enhanced = enhanced
+        .modulate({
+          brightness: 1.05,
+          saturation: 1.4, // More vibrant
+          contrast: 1.2, // Stronger contrast
+        })
+        .sharpen({ sigma: 1.5 }); // Sharpen for tech look
+    }
+
+    // Celebration theme: Bright and colorful
+    else if (promptLower.includes('celebration') || promptLower.includes('joyful') || promptLower.includes('vibrant') || bgLower.includes('celebration')) {
+      console.log('🎨 [ENHANCE] Applying CELEBRATION effect');
+      enhanced = enhanced
+        .modulate({
+          brightness: 1.15,
+          saturation: 1.3,
+          contrast: 1.1,
+        })
+        .sharpen();
+    }
+
+    // Default: Balanced enhancement
+    else {
+      console.log('🎨 [ENHANCE] Applying DEFAULT enhancement');
       enhanced = enhanced.modulate({
         brightness: 1.08,
-        saturation: 1.2,
+        saturation: 1.1,
+        contrast: 1.05,
       });
     }
 
