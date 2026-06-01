@@ -27,14 +27,10 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
     // Build query
-    let query = db.collection('photobooth');
-
-    // Apply sort
-    if (sortBy === 'oldest') {
-      query = query.orderBy('createdAt', 'asc');
-    } else {
-      query = query.orderBy('createdAt', 'desc');
-    }
+    const collectionRef = db.collection('photobooth');
+    const query = sortBy === 'oldest'
+      ? collectionRef.orderBy('createdAt', 'asc')
+      : collectionRef.orderBy('createdAt', 'desc');
 
     // Get total count
     const countSnapshot = await query.count().get();
