@@ -4,21 +4,29 @@ import { cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { PhotoBoothPhoto } from '@/types';
 
-// Initialize Firebase Admin SDK
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    }),
-  });
-}
+let db: ReturnType<typeof getFirestore> | null = null;
 
-const db = getFirestore();
+function getDb() {
+  if (!db) {
+    if (!getApps().length) {
+      initializeApp({
+        credential: cert({
+          projectId: process.env.FIREBASE_PROJECT_ID!,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')!,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+        }),
+      });
+    }
+    db = getFirestore();
+  }
+  return db;
+}
 
 export async function GET(request: NextRequest) {
   try {
+    // Initialize Firebase on first request
+    getDb();
+
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get('search') || '';
     const category = searchParams.get('category') || '';
@@ -27,7 +35,7 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
     // Build query
-    const collectionRef = db.collection('photobooth');
+    const collectionRef = getDb().collection('photobooth');
     const query = sortBy === 'oldest'
       ? collectionRef.orderBy('createdAt', 'asc')
       : collectionRef.orderBy('createdAt', 'desc');

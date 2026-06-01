@@ -4,20 +4,23 @@ import { getStorage } from 'firebase-admin/storage';
 import { getFirestore } from 'firebase-admin/firestore';
 import { PhotoBoothPhoto } from '@/types';
 
-// Initialize Firebase Admin SDK
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    }),
-    storageBucket: `${process.env.FIREBASE_PROJECT_ID}.appspot.com`,
-  });
-}
+let bucket: ReturnType<ReturnType<typeof getStorage>['bucket']> | null = null;
+let db: ReturnType<typeof getFirestore> | null = null;
 
-const bucket = getStorage().bucket();
-const db = getFirestore();
+function initializeFirebase() {
+  if (!getApps().length) {
+    initializeApp({
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID!,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')!,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+      }),
+      storageBucket: `${process.env.FIREBASE_PROJECT_ID}.appspot.com`,
+    });
+  }
+  if (!bucket) bucket = getStorage().bucket();
+  if (!db) db = getFirestore();
+}
 
 // Generate unique photo code
 function generatePhotoCode(): string {
@@ -28,6 +31,7 @@ function generatePhotoCode(): string {
 
 export async function POST(request: NextRequest) {
   try {
+    initializeFirebase();
     const formData = await request.formData();
 
     const sessionId = formData.get('sessionId') as string;
@@ -54,7 +58,7 @@ export async function POST(request: NextRequest) {
       originalPhotoBase64.split(',')[1],
       'base64'
     );
-    const originalFile = bucket.file(
+    const originalFile = bucket!.file(
       `sitecore-silver/${sessionId}/original_${timestamp}.jpg`
     );
     await originalFile.save(originalBuffer, { contentType: 'image/jpeg' });
@@ -64,7 +68,7 @@ export async function POST(request: NextRequest) {
       compositedPhotoBase64.split(',')[1],
       'base64'
     );
-    const compositedFile = bucket.file(
+    const compositedFile = bucket!.file(
       `sitecore-silver/${sessionId}/composited_${timestamp}.jpg`
     );
     await compositedFile.save(compositedBuffer, { contentType: 'image/jpeg' });
@@ -90,7 +94,7 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    await db.collection('photobooth').doc(photoId).set(photoData);
+    await db!.collection('photobooth').doc(photoId).set(photoData);
 
     return NextResponse.json({
       success: true,
