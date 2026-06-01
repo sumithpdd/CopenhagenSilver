@@ -15,7 +15,7 @@ function initializeFirebase() {
         privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')!,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
       }),
-      storageBucket: `${process.env.FIREBASE_PROJECT_ID}.appspot.com`,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${process.env.FIREBASE_PROJECT_ID}.appspot.com`,
     });
   }
   if (!bucket) bucket = getStorage().bucket();
