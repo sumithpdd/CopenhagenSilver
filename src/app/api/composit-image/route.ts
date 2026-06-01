@@ -1,69 +1,103 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import sharp from 'sharp';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
-
 /**
- * Add Sitecore logo to image
+ * Add Sitecore logo and theme effects to image
  */
-async function addLogoToImage(imageBase64: string): Promise<string> {
+async function enhanceImage(imageBase64: string, prompt: string, background: string): Promise<string> {
   try {
-    // Create a simple SVG logo (Sitecore Silver branding)
-    const logoSvg = `
-      <svg width="200" height="80" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
-          </filter>
-        </defs>
-        <rect width="200" height="80" fill="rgba(0,0,0,0.4)" rx="8"/>
-        <circle cx="25" cy="40" r="15" fill="none" stroke="white" stroke-width="2" filter="url(#shadow)"/>
-        <circle cx="25" cy="40" r="10" fill="none" stroke="white" stroke-width="1"/>
-        <text x="45" y="48" font-family="Arial,sans-serif" font-size="18" font-weight="bold" fill="white" filter="url(#shadow)">SITECORE</text>
-        <text x="45" y="62" font-family="Arial,sans-serif" font-size="10" fill="silver">25 Years</text>
-      </svg>
-    `;
-
     // Convert base64 to buffer
     const imageBuffer = Buffer.from(imageBase64, 'base64');
-
-    // Create SVG buffer
-    const logoBuffer = Buffer.from(logoSvg);
 
     // Get image metadata
     const metadata = await sharp(imageBuffer).metadata();
     const width = metadata.width || 1200;
     const height = metadata.height || 800;
 
-    // Resize logo proportionally to image size
-    const logoWidth = Math.round(width * 0.15); // 15% of image width
-    const logoHeight = Math.round((80 / 200) * logoWidth); // Maintain aspect ratio
+    // Apply theme-based effects
+    let enhanced = sharp(imageBuffer);
 
-    const resizedLogoBuffer = await sharp(logoBuffer)
-      .resize(logoWidth, logoHeight, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    // Apply effects based on prompt theme
+    if (prompt.toLowerCase().includes('heritage') || background.toLowerCase().includes('heritage')) {
+      // Add sepia/vintage effect
+      enhanced = enhanced.modulate({
+        brightness: 1.05,
+        saturation: 0.8,
+      });
+    } else if (prompt.toLowerCase().includes('innovation') || background.toLowerCase().includes('innovation')) {
+      // Enhance colors for tech vibe
+      enhanced = enhanced.modulate({
+        brightness: 1.02,
+        saturation: 1.15,
+      });
+    } else if (prompt.toLowerCase().includes('celebration') || background.toLowerCase().includes('celebration')) {
+      // Bright, vibrant effect
+      enhanced = enhanced.modulate({
+        brightness: 1.08,
+        saturation: 1.2,
+      });
+    }
+
+    // Create a subtle silver overlay
+    const overlaySize = 100;
+    const silverOverlay = await sharp({
+      create: {
+        width: overlaySize,
+        height: overlaySize,
+        channels: 4,
+        background: { r: 192, g: 192, b: 192, alpha: 0.1 }, // Silver with transparency
+      },
+    })
+      .png()
       .toBuffer();
 
-    // Composite logo on image (bottom right corner with padding)
-    const padding = Math.round(width * 0.02); // 2% padding
-    const logoX = width - logoWidth - padding;
-    const logoY = height - logoHeight - padding;
-
-    const imageWithLogo = await sharp(imageBuffer)
+    // Create text banner with Sitecore branding
+    const textBanner = await sharp({
+      create: {
+        width: width,
+        height: 120,
+        channels: 3,
+        background: { r: 0, g: 0, b: 0 },
+      },
+    })
       .composite([
         {
-          input: resizedLogoBuffer,
-          left: logoX,
-          top: logoY,
+          input: Buffer.from(`
+            <svg width="${width}" height="120" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:rgba(0,0,0,0.7);stop-opacity:1" />
+                  <stop offset="100%" style="stop-color:rgba(0,0,0,0.3);stop-opacity:1" />
+                </linearGradient>
+              </defs>
+              <rect width="${width}" height="120" fill="url(#bgGrad)"/>
+              <text x="30" y="70" font-family="Arial,sans-serif" font-size="48" font-weight="bold" fill="white">SITECORE SILVER</text>
+              <text x="30" y="105" font-family="Arial,sans-serif" font-size="18" fill="#C0C0C0">25 Years of Innovation • June 11, 2026</text>
+            </svg>
+          `),
+          top: height - 120,
+          left: 0,
         },
       ])
+      .png()
       .toBuffer();
 
-    return imageWithLogo.toString('base64');
+    // Composite the enhanced image with banner
+    const result = await enhanced
+      .composite([
+        {
+          input: textBanner,
+          top: height - 120,
+          left: 0,
+        },
+      ])
+      .jpeg({ quality: 95 })
+      .toBuffer();
+
+    return result.toString('base64');
   } catch (error) {
-    console.warn('⚠️ Could not add logo:', error);
-    // Return original image if logo addition fails
-    return imageBase64;
+    console.error('❌ Enhancement error:', error);
+    throw error;
   }
 }
 
@@ -78,7 +112,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🎨 Starting image compositing with Gemini API...');
+    console.log('🎨 Starting image enhancement...');
 
     // Extract base64 from data URL if needed
     const photoBase64 =
@@ -86,104 +120,19 @@ export async function POST(request: NextRequest) {
         ? photo.split(',')[1]
         : photo;
 
-    // Extract background base64 if provided
-    let backgroundBase64 = null;
-    if (background) {
-      backgroundBase64 = background.includes(',') && background.startsWith('data:image')
-        ? background.split(',')[1]
-        : background;
-    }
+    console.log('📝 Prompt:', prompt);
+    console.log('🎭 Background:', backgroundDescription);
 
-    // Build the prompt with background context
-    const fullPrompt = backgroundDescription && backgroundDescription.trim()
-      ? `${prompt}\n\nBackground theme: ${backgroundDescription}`
-      : prompt;
-
-    console.log('📝 Prompt:', fullPrompt);
-
-    // Call Gemini API with image
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-    });
-
-    // Build the request with proper image handling
-    const systemPrompt = 'You are an expert image editor. Process the user\'s photo with creative enhancements while keeping the person recognizable. Return only the edited image.';
-    const requestContent: any[] = [`${systemPrompt}\n\n${fullPrompt}`];
-
-    // Add user photo
-    requestContent.push({
-      inlineData: {
-        mimeType: 'image/jpeg',
-        data: photoBase64,
-      },
-    });
-
-    // Add background image if provided
-    if (backgroundBase64) {
-      requestContent.push({
-        inlineData: {
-          mimeType: 'image/jpeg',
-          data: backgroundBase64,
-        },
-      });
-    }
-
-    console.log('🔄 Calling Gemini API...');
-
-    // Call Gemini API
-    const result = await model.generateContent(requestContent);
-
-    // Extract the image from response
-    const response = result.response;
-    let base64Data: string | null = null;
-
-    // Try to get image data from response
-    if (response.candidates && response.candidates.length > 0) {
-      const candidate = response.candidates[0];
-      if (candidate.content && candidate.content.parts) {
-        for (const part of candidate.content.parts) {
-          if (part.inlineData && part.inlineData.data) {
-            base64Data = part.inlineData.data;
-            console.log('✅ Image data extracted from Gemini response');
-            break;
-          }
-        }
-      }
-    }
-
-    // If no image in response, try text (sometimes Gemini returns base64 as text)
-    if (!base64Data) {
-      const text = response.text();
-      console.log('📄 Response text:', text.substring(0, 100));
-
-      // If response is base64, use it directly
-      if (text && !text.includes('unable') && !text.includes('error') && text.length > 100) {
-        // Check if it looks like base64
-        if (/^[A-Za-z0-9+/=]+$/.test(text.substring(0, 50))) {
-          base64Data = text;
-          console.log('✅ Base64 data extracted from response text');
-        }
-      }
-    }
-
-    if (!base64Data) {
-      console.error('❌ No image data in Gemini response');
-      console.error('Full response:', JSON.stringify(response));
-      throw new Error('Gemini API did not return image data. The API may have rate limits or quota issues.');
-    }
-
-    console.log('✨ Image compositing successful!');
-
-    // Add Sitecore logo to the image
-    console.log('🎨 Adding Sitecore logo...');
-    const logoBase64 = await addLogoToImage(base64Data);
+    // Enhance the image with Sharp effects and text overlay
+    console.log('⚙️ Applying enhancements...');
+    const enhancedBase64 = await enhanceImage(photoBase64, prompt, backgroundDescription);
 
     // Ensure base64 is properly formatted
-    const finalBase64 = logoBase64.includes('data:')
-      ? logoBase64
-      : `data:image/jpeg;base64,${logoBase64}`;
+    const finalBase64 = enhancedBase64.includes('data:')
+      ? enhancedBase64
+      : `data:image/jpeg;base64,${enhancedBase64}`;
 
-    console.log('✅ Logo added successfully!');
+    console.log('✅ Enhancement completed!');
 
     // Return the result
     return NextResponse.json({
@@ -194,13 +143,13 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('❌ Error compositing image:', error);
+    console.error('❌ Error processing image:', error);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         success: false,
-        error: `Failed to composit image: ${errorMessage}`,
+        error: `Failed to process image: ${errorMessage}`,
         details: process.env.NODE_ENV === 'development' ? error : undefined,
       },
       { status: 500 }

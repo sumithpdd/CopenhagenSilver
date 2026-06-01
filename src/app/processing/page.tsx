@@ -49,10 +49,33 @@ export default function ProcessingPage() {
           console.log('✅ Image processed successfully');
           setCompositedPhoto(result.data.compositedPhoto);
 
+          // Upload to Firebase
+          console.log('📤 Uploading to Firebase...');
+          const uploadFormData = new FormData();
+          uploadFormData.append('sessionId', session!.sessionId);
+          uploadFormData.append('userName', session!.userName);
+          uploadFormData.append('userEmail', session!.userEmail || '');
+          uploadFormData.append('originalPhoto', capturedPhoto!);
+          uploadFormData.append('compositedPhoto', result.data.compositedPhoto);
+          uploadFormData.append('backgroundId', selectedBackground!.id);
+          uploadFormData.append('promptId', selectedPrompt!.id);
+
+          const uploadResponse = await fetch('/api/upload-photo', {
+            method: 'POST',
+            body: uploadFormData,
+          });
+
+          const uploadResult = await uploadResponse.json();
+          if (uploadResult.success) {
+            console.log('✅ Upload successful:', uploadResult.data);
+          } else {
+            console.warn('⚠️ Upload warning:', uploadResult.error);
+          }
+
           // Redirect to result page after a short delay
           setTimeout(() => {
             router.push('/result');
-          }, 1000);
+          }, 1500);
         } else {
           throw new Error('No image data returned from API');
         }
