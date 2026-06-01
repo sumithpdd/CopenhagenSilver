@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(timeout 30 npm run dev)",
+      "Bash(timeout 20 npm run dev)",
+      "WebFetch(domain:www.sitecore.com)",
+      "Bash(timeout 25 npm run dev)",
+      "WebSearch",
+      "WebFetch(domain:brandcolorcode.com)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <!-- Your Story Background - You are part of Sitecore's 25-year journey -->
+
+  <!-- Gradient background - Light to dark -->
+  <defs>
+    <linearGradient id="yourStoryBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f5f5f5;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#e8e8e8;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#d3d3d3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c0c0c0;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Subtle texture overlay -->
+    <pattern id="texturePattern" patternUnits="userSpaceOnUse" width="100" height="100">
+      <rect width="100" height="100" fill="#ffffff" opacity="0.05"/>
+      <circle cx="10" cy="10" r="1" fill="#000000" opacity="0.02"/>
+      <circle cx="50" cy="30" r="1.5" fill="#000000" opacity="0.02"/>
+      <circle cx="70" cy="60" r="1" fill="#000000" opacity="0.02"/>
+    </pattern>
+  </defs>
+
+  <!-- Background base -->
+  <rect width="1200" height="800" fill="url(#yourStoryBg)"/>
+
+  <!-- Texture overlay -->
+  <rect width="1200" height="800" fill="url(#texturePattern)"/>
+
+  <!-- Left side - Light gradient -->
+  <rect width="600" height="800" fill="url(#yourStoryBg)" opacity="0.9"/>
+
+  <!-- Right side - Dark section with Sitecore badge -->
+  <rect x="600" y="0" width="600" height="800" fill="#1a1a1a" opacity="0.95"/>
+
+  <!-- Person silhouette - center left -->
+  <g opacity="0.9">
+    <!-- Head with question mark -->
+    <circle cx="300" cy="280" r="80" fill="#1a1a1a"/>
+
+    <!-- Question mark in head -->
+    <text x="300" y="310" font-size="80" font-weight="bold" fill="white" text-anchor="middle" font-family="DM Sans, sans-serif">?</text>
+
+    <!-- Shoulders/body -->
+    <ellipse cx="300" cy="420" rx="100" ry="120" fill="#1a1a1a"/>
+
+    <!-- Outline for depth -->
+    <circle cx="300" cy="280" r="80" fill="none" stroke="#808080" stroke-width="2" opacity="0.5"/>
+  </g>
+
+  <!-- "YOU" text with arrow on left side -->
+  <g>
+    <!-- Arrow -->
+    <line x1="180" y1="230" x2="220" y2="270" stroke="#1a1a1a" stroke-width="4" stroke-linecap="round"/>
+    <polygon points="220,270 210,250 225,260" fill="#1a1a1a"/>
+
+    <!-- "YOU" text -->
+    <text x="150" y="220" font-size="72" font-weight="bold" fill="#1a1a1a" font-family="DM Sans, sans-serif">YOU</text>
+  </g>
+
+  <!-- Sitecore badge on right side -->
+  <g>
+    <!-- Banner background -->
+    <rect x="650" y="100" width="500" height="180" fill="#1a1a1a" rx="4"/>
+
+    <!-- Banner texture/pattern -->
+    <rect x="650" y="100" width="500" height="180" fill="#202020" opacity="0.5"/>
+
+    <!-- Sitecore circle logo -->
+    <circle cx="750" cy="155" r="35" fill="none" stroke="white" stroke-width="3" opacity="0.8"/>
+    <circle cx="750" cy="155" r="25" fill="none" stroke="white" stroke-width="2" opacity="0.6"/>
+
+    <!-- Logo text -->
+    <text x="750" y="160" font-size="32" font-weight="bold" fill="white" text-anchor="middle" font-family="DM Sans, sans-serif" opacity="0.9">S</text>
+
+    <!-- Sitecore text -->
+    <text x="820" y="145" font-size="24" font-weight="700" fill="white" font-family="DM Sans, sans-serif">SITECORE</text>
+
+    <!-- Tagline -->
+    <text x="820" y="180" font-size="18" fill="white" font-family="DM Sans, sans-serif" opacity="0.8">Trusted by</text>
+    <text x="820" y="210" font-size="18" fill="white" font-family="DM Sans, sans-serif" opacity="0.8">brands for</text>
+    <text x="820" y="240" font-size="18" fill="white" font-family="DM Sans, sans-serif" opacity="0.8">25 years</text>
+  </g>
+
+  <!-- Bottom text - Your story matters -->
+  <g opacity="0.6">
+    <text x="300" y="700" font-size="32" font-weight="bold" fill="#1a1a1a" text-anchor="middle" font-family="DM Sans, sans-serif">Your Story</text>
+    <text x="300" y="750" font-size="18" fill="#1a1a1a" text-anchor="middle" font-family="DM Sans, sans-serif">Be part of Sitecore's 25-year legacy</text>
+  </g>
+
+  <!-- Subtle accent lines -->
+  <line x1="580" y1="0" x2="580" y2="800" stroke="white" stroke-width="1" opacity="0.1"/>
+</svg>

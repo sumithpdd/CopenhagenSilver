@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <!-- Celebration Background - Community & Milestone -->
+
+  <!-- Gradient background -->
+  <defs>
+    <linearGradient id="celebrationBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2d3a2d;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1a2a1a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d1a0d;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="celebrationGlow" cx="50%" cy="30%" r="50%">
+      <stop offset="0%" style="stop-color:#d4af37;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#d4af37;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Base -->
+  <rect width="1200" height="800" fill="url(#celebrationBg)"/>
+  <ellipse cx="600" cy="200" rx="400" ry="300" fill="url(#celebrationGlow)"/>
+
+  <!-- Confetti -->
+  <circle cx="150" cy="100" r="4" fill="#d4af37" opacity="0.6"/>
+  <circle cx="250" cy="120" r="3" fill="#b8b8b8" opacity="0.5"/>
+  <circle cx="350" cy="80" r="4" fill="#c9b4cc" opacity="0.6"/>
+  <circle cx="450" cy="110" r="3" fill="#d4af37" opacity="0.5"/>
+  <circle cx="550" cy="90" r="4" fill="#b8b8b8" opacity="0.6"/>
+  <circle cx="650" cy="120" r="3" fill="#c9b4cc" opacity="0.5"/>
+  <circle cx="750" cy="100" r="4" fill="#d4af37" opacity="0.6"/>
+  <circle cx="850" cy="110" r="3" fill="#b8b8b8" opacity="0.5"/>
+  <circle cx="950" cy="80" r="4" fill="#c9b4cc" opacity="0.6"/>
+  <circle cx="1050" cy="120" r="3" fill="#d4af37" opacity="0.5"/>
+
+  <!-- Celebration circles/burst -->
+  <circle cx="600" cy="400" r="150" fill="none" stroke="#d4af37" stroke-width="2" opacity="0.2"/>
+  <circle cx="600" cy="400" r="120" fill="none" stroke="#c9b4cc" stroke-width="2" opacity="0.15"/>
+  <circle cx="600" cy="400" r="90" fill="none" stroke="#b8b8b8" stroke-width="2" opacity="0.1"/>
+
+  <!-- Community elements - interconnected circles -->
+  <g opacity="0.3">
+    <circle cx="300" cy="450" r="30" fill="none" stroke="#b8b8b8" stroke-width="2"/>
+    <circle cx="450" cy="480" r="35" fill="none" stroke="#b8b8b8" stroke-width="2"/>
+    <circle cx="600" cy="500" r="40" fill="none" stroke="#d4af37" stroke-width="2"/>
+    <circle cx="750" cy="480" r="35" fill="none" stroke="#b8b8b8" stroke-width="2"/>
+    <circle cx="900" cy="450" r="30" fill="none" stroke="#b8b8b8" stroke-width="2"/>
+
+    <!-- Connection lines -->
+    <line x1="330" y1="450" x2="420" y2="475" stroke="#b8b8b8" stroke-width="1"/>
+    <line x1="480" y1="485" x2="570" y2="500" stroke="#b8b8b8" stroke-width="1"/>
+    <line x1="630" y1="500" x2="720" y2="485" stroke="#b8b8b8" stroke-width="1"/>
+    <line x1="780" y1="480" x2="870" y2="455" stroke="#b8b8b8" stroke-width="1"/>
+  </g>
+
+  <!-- Celebration text -->
+  <text x="600" y="650" text-anchor="middle" fill="#d4af37" font-size="56" font-weight="bold" opacity="0.3">CELEBRATE</text>
+  <text x="600" y="710" text-anchor="middle" fill="#b8b8b8" font-size="24" opacity="0.2">Together with our community</text>
+
+  <!-- Champagne glasses effect -->
+  <g opacity="0.15">
+    <line x1="400" y1="600" x2="400" y2="750" stroke="#c9b4cc" stroke-width="3"/>
+    <path d="M 380 600 Q 380 580 400 570 Q 420 580 420 600" fill="#c9b4cc"/>
+
+    <line x1="800" y1="600" x2="800" y2="750" stroke="#c9b4cc" stroke-width="3"/>
+    <path d="M 780 600 Q 780 580 800 570 Q 820 580 820 600" fill="#c9b4cc"/>
+  </g>
+</svg>
