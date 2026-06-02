@@ -9,13 +9,17 @@ let db: ReturnType<typeof getFirestore> | null = null;
 
 function initializeFirebase() {
   if (!getApps().length) {
+    // Firebase Admin SDK needs .appspot.com bucket, not .firebasestorage.app
+    const bucketName = `${process.env.FIREBASE_PROJECT_ID}.appspot.com`;
+    console.log('🔑 [FIREBASE] Initializing with bucket:', bucketName);
+
     initializeApp({
       credential: cert({
         projectId: process.env.FIREBASE_PROJECT_ID!,
         privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')!,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
       }),
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${process.env.FIREBASE_PROJECT_ID}.appspot.com`,
+      storageBucket: bucketName,
     });
   }
   if (!bucket) bucket = getStorage().bucket();
