@@ -1,7 +1,6 @@
 {
   "name": "sitecore-silver-functions",
   "description": "Firebase Cloud Functions for Sitecore Silver Photo Booth",
-  "type": "module",
   "main": "lib/index.js",
   "scripts": {
     "lint": "eslint . --ext .ts",

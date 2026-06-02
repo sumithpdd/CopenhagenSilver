@@ -197,7 +197,6 @@ async function applyThemeEffect(
       .modulate({
         brightness: 1.05,
         saturation: 1.4,
-        contrast: 1.2,
       })
       .sharpen({ sigma: 1.5 });
   } else if (promptLower.includes("celebration") || bgLower.includes("celebration")) {
@@ -205,14 +204,12 @@ async function applyThemeEffect(
       .modulate({
         brightness: 1.15,
         saturation: 1.3,
-        contrast: 1.1,
       })
       .sharpen();
   } else {
     enhanced = enhanced.modulate({
       brightness: 1.08,
       saturation: 1.1,
-      contrast: 1.05,
     });
   }
 
