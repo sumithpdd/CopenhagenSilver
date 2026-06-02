@@ -88,34 +88,34 @@ async function enhanceImageWithSharp(imageBase64: string, prompt: string, backgr
     const bgLower = background.toLowerCase();
 
     // Heritage theme: Vintage/sepia effect
-    if (promptLower.includes('heritage') || promptLower.includes('vintage') || bgLower.includes('heritage')) {
+    if (promptLower.includes('heritage') || promptLower.includes('vintage') || promptLower.includes('history') || bgLower.includes('heritage')) {
       console.log('🎨 [SHARP] Applying HERITAGE effect');
       enhanced = enhanced
-        .modulate({ brightness: 1.1, saturation: 0.5, hue: 15 })
-        .blur(0.3);
+        .modulate({ brightness: 1.15, saturation: 0.4, hue: 20 })
+        .blur(0.4)
+        .sharpen();
     }
-    // Innovation theme: High contrast effect
-    else if (promptLower.includes('innovation') || promptLower.includes('future') || bgLower.includes('innovation')) {
+    // Innovation theme: High saturation/vibrant effect
+    else if (promptLower.includes('innovation') || promptLower.includes('future') || promptLower.includes('tech') || bgLower.includes('innovation')) {
       console.log('🎨 [SHARP] Applying INNOVATION effect');
       enhanced = enhanced
-        .modulate({ brightness: 1.05, saturation: 1.4, contrast: 1.2 })
-        .sharpen({ sigma: 1.5 });
+        .modulate({ brightness: 1.1, saturation: 1.5 })
+        .sharpen({ sigma: 2 });
     }
-    // Celebration theme: Bright and colorful
-    else if (promptLower.includes('celebration') || promptLower.includes('joyful') || bgLower.includes('celebration')) {
+    // Celebration theme: Bright and very colorful
+    else if (promptLower.includes('celebrat') || promptLower.includes('joyful') || promptLower.includes('years') || bgLower.includes('celebration')) {
       console.log('🎨 [SHARP] Applying CELEBRATION effect');
       enhanced = enhanced
-        .modulate({ brightness: 1.15, saturation: 1.3, contrast: 1.1 })
-        .sharpen();
+        .modulate({ brightness: 1.2, saturation: 1.5 })
+        .sharpen({ sigma: 1.5 });
     }
     // Default: Balanced enhancement
     else {
       console.log('🎨 [SHARP] Applying DEFAULT enhancement');
       enhanced = enhanced.modulate({
-        brightness: 1.08,
-        saturation: 1.1,
-        contrast: 1.05,
-      });
+        brightness: 1.1,
+        saturation: 1.2,
+      }).sharpen();
     }
 
     // Create text banner
