@@ -1,22 +1,67 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, type ServiceAccount } from 'firebase-admin/app';
 import { getFirestore, Firestore, DocumentData } from 'firebase-admin/firestore';
 import { getStorage, Storage } from 'firebase-admin/storage';
 
 let db: Firestore | null = null;
 let storage: Storage | null = null;
 
+function parsePrivateKey(raw: string): string {
+  let key = raw.trim();
+  if (
+    (key.startsWith('"') && key.endsWith('"')) ||
+    (key.startsWith("'") && key.endsWith("'"))
+  ) {
+    key = key.slice(1, -1);
+  }
+  return key.replace(/\\n/g, '\n');
+}
+
+function getServiceAccount(): ServiceAccount {
+  const json = process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim();
+  if (json) {
+    try {
+      const parsed = JSON.parse(json) as ServiceAccount & { private_key?: string };
+      if (parsed.private_key) {
+        parsed.private_key = parsePrivateKey(parsed.private_key);
+      }
+      return parsed;
+    } catch {
+      throw new Error(
+        'FIREBASE_SERVICE_ACCOUNT_KEY is set but is not valid JSON. Paste the full service account JSON from Firebase Console.'
+      );
+    }
+  }
+
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+  const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY?.trim();
+
+  if (!projectId || !clientEmail || !privateKeyRaw) {
+    throw new Error(
+      'Firebase Admin is not configured. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in Vercel (or FIREBASE_SERVICE_ACCOUNT_KEY as full JSON).'
+    );
+  }
+
+  return {
+    projectId,
+    clientEmail,
+    privateKey: parsePrivateKey(privateKeyRaw),
+  };
+}
+
+function getStorageBucketName(): string {
+  return (
+    process.env.FIREBASE_STORAGE_BUCKET?.trim() ||
+    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim() ||
+    `${process.env.FIREBASE_PROJECT_ID}.appspot.com`
+  );
+}
+
 export function getFirebaseAdmin() {
   if (!getApps().length) {
-    const bucketName =
-      process.env.FIREBASE_STORAGE_BUCKET ||
-      `${process.env.FIREBASE_PROJECT_ID}.appspot.com`;
-
+    const bucketName = getStorageBucketName();
     initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID!,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')!,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-      }),
+      credential: cert(getServiceAccount()),
       storageBucket: bucketName,
     });
   }
@@ -24,13 +69,9 @@ export function getFirebaseAdmin() {
   if (!db) db = getFirestore();
   if (!storage) storage = getStorage();
 
-  const bucketName =
-    process.env.FIREBASE_STORAGE_BUCKET ||
-    `${process.env.FIREBASE_PROJECT_ID}.appspot.com`;
-
   return {
     db,
-    bucket: storage.bucket(bucketName),
+    bucket: storage.bucket(getStorageBucketName()),
   };
 }
 
@@ -41,25 +82,41 @@ export function isPhotoPublicInGallery(data: DocumentData): boolean {
   return true;
 }
 
+function toIsoDate(value: unknown): string {
+  if (!value) return new Date().toISOString();
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? new Date().toISOString() : value.toISOString();
+  }
+  if (typeof value === 'object' && value !== null && 'toDate' in value) {
+    const d = (value as { toDate: () => Date }).toDate();
+    return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+  }
+  const parsed = new Date(String(value));
+  return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+}
+
+/** API-safe photo shape (JSON-serializable). */
 export function docToPhoto(id: string, data: DocumentData) {
   return {
     id,
-    sessionId: data.sessionId as string,
-    userName: data.userName as string,
-    userEmail: data.userEmail as string | undefined,
-    originalPhotoUrl: data.originalPhotoUrl as string,
-    compositedPhotoUrl: data.compositedPhotoUrl as string,
-    backgroundId: data.backgroundId as string,
-    promptId: data.promptId as string,
-    photoCode: data.photoCode as string,
-    createdAt: data.createdAt?.toDate?.() ?? new Date(data.createdAt),
+    sessionId: String(data.sessionId ?? ''),
+    userName: String(data.userName ?? 'Guest'),
+    userEmail: data.userEmail ? String(data.userEmail) : undefined,
+    originalPhotoUrl: String(data.originalPhotoUrl ?? ''),
+    compositedPhotoUrl: String(data.compositedPhotoUrl ?? ''),
+    backgroundId: String(data.backgroundId ?? ''),
+    promptId: String(data.promptId ?? ''),
+    photoCode: String(data.photoCode ?? id),
+    createdAt: toIsoDate(data.createdAt),
     visibility: (data.visibility as 'public' | 'hidden') ?? 'public',
     moderationStatus:
       (data.moderationStatus as 'approved' | 'pending' | 'rejected') ?? 'approved',
     consentGalleryShare: data.consentGalleryShare !== false,
-    consentTermsAcceptedAt: data.consentTermsAcceptedAt?.toDate?.() ?? data.consentTermsAcceptedAt,
-    moderationNote: data.moderationNote as string | undefined,
-    updatedAt: data.updatedAt?.toDate?.() ?? data.updatedAt,
+    consentTermsAcceptedAt: data.consentTermsAcceptedAt
+      ? toIsoDate(data.consentTermsAcceptedAt)
+      : undefined,
+    moderationNote: data.moderationNote ? String(data.moderationNote) : undefined,
+    updatedAt: data.updatedAt ? toIsoDate(data.updatedAt) : undefined,
     metadata: data.metadata,
   };
 }

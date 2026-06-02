@@ -29,13 +29,17 @@ export default function GalleryPage() {
   useEffect(() => {
     async function fetchPhotos() {
       try {
-        const response = await fetch('/api/gallery?limit=100&offset=0');
-
-        if (!response.ok) {
-          throw new Error(`Gallery API error: ${response.status}`);
-        }
+        const response = await fetch('/api/gallery?limit=100&offset=0', {
+          cache: 'no-store',
+        });
 
         const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.error || `Gallery API error: ${response.status}`
+          );
+        }
 
         if (result.success && result.data?.photos) {
           setGalleryPhotos(

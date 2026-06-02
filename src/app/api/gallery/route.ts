@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { docToPhoto, getFirebaseAdmin, isPhotoPublicInGallery } from '@/lib/firebase-admin';
-import type { PhotoBoothPhoto } from '@/types';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,32 +16,63 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
     const collectionRef = db.collection('photobooth');
-    const query =
-      sortBy === 'oldest'
-        ? collectionRef.orderBy('createdAt', 'asc')
-        : collectionRef.orderBy('createdAt', 'desc');
 
-    const snapshot = await query.limit(500).get();
+    let snapshot;
+    try {
+      const ordered =
+        sortBy === 'oldest'
+          ? collectionRef.orderBy('createdAt', 'asc')
+          : collectionRef.orderBy('createdAt', 'desc');
+      snapshot = await ordered.limit(500).get();
+    } catch (queryError) {
+      console.warn(
+        '[GALLERY] orderBy(createdAt) failed, falling back to unordered fetch:',
+        queryError
+      );
+      snapshot = await collectionRef.limit(500).get();
+    }
 
-    const allPublic: PhotoBoothPhoto[] = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      if (!isPhotoPublicInGallery(data)) return;
+    const allPublic = [];
 
-      const photo = docToPhoto(doc.id, data);
+    for (const doc of snapshot.docs) {
+      try {
+        const data = doc.data();
+        if (!isPhotoPublicInGallery(data)) continue;
 
-      if (
-        searchQuery &&
-        !photo.userName.toLowerCase().includes(searchQuery) &&
-        !photo.photoCode.toUpperCase().includes(searchQuery.toUpperCase())
-      ) {
-        return;
+        const photo = docToPhoto(doc.id, data);
+
+        if (
+          !photo.compositedPhotoUrl ||
+          !photo.originalPhotoUrl
+        ) {
+          continue;
+        }
+
+        if (
+          searchQuery &&
+          !photo.userName.toLowerCase().includes(searchQuery) &&
+          !photo.photoCode.toUpperCase().includes(searchQuery.toUpperCase())
+        ) {
+          continue;
+        }
+
+        if (category && photo.backgroundId !== category) continue;
+
+        allPublic.push(photo);
+      } catch (docError) {
+        console.warn('[GALLERY] Skipping malformed doc', doc.id, docError);
       }
+    }
 
-      if (category && photo.backgroundId !== category) return;
-
-      allPublic.push(photo);
-    });
+    if (sortBy === 'newest') {
+      allPublic.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    } else {
+      allPublic.sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    }
 
     const total = allPublic.length;
     const photos = allPublic.slice(offset, offset + limit);
@@ -55,11 +88,22 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error fetching gallery:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[GALLERY] Error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const isConfig =
+      message.includes('not configured') ||
+      message.includes('FIREBASE_') ||
+      message.includes('private key') ||
+      message.includes('credential');
+
     return NextResponse.json(
-      { success: false, error: `Failed to fetch gallery: ${errorMessage}` },
-      { status: 500 }
+      {
+        success: false,
+        error: isConfig
+          ? 'Gallery unavailable: Firebase is not configured on the server. Add Firebase Admin env vars in Vercel.'
+          : `Failed to fetch gallery: ${message}`,
+      },
+      { status: isConfig ? 503 : 500 }
     );
   }
 }
