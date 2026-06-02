@@ -79,8 +79,12 @@ export async function POST(request: NextRequest) {
     const originalFile = bucket!.file(
       `sitecore-silver/${sessionId}/original_${timestamp}.jpg`
     );
-    await originalFile.save(originalBuffer, { contentType: 'image/jpeg' });
-    console.log('✅ [API] Original photo saved to Storage');
+    await originalFile.save(originalBuffer, {
+      contentType: 'image/jpeg',
+      public: true,
+      metadata: { 'Cache-Control': 'public, max-age=31536000' }
+    });
+    console.log('✅ [API] Original photo saved to Storage (public)');
 
     // Upload composited photo
     console.log('📤 [API] Uploading composited photo...');
@@ -93,8 +97,12 @@ export async function POST(request: NextRequest) {
     const compositedFile = bucket!.file(
       `sitecore-silver/${sessionId}/composited_${timestamp}.jpg`
     );
-    await compositedFile.save(compositedBuffer, { contentType: 'image/jpeg' });
-    console.log('✅ [API] Composited photo saved to Storage');
+    await compositedFile.save(compositedBuffer, {
+      contentType: 'image/jpeg',
+      public: true,
+      metadata: { 'Cache-Control': 'public, max-age=31536000' }
+    });
+    console.log('✅ [API] Composited photo saved to Storage (public)');
 
     // Get download URLs
     console.log('🔗 [API] Getting public URLs...');
