@@ -1,0 +1,16 @@
+---
+description: Sitecore Silver Photo Booth — core context and conventions
+alwaysApply: true
+---
+
+# Sitecore Silver Photo Booth
+
+Event photo booth (Next.js 14, React 18, TypeScript). Flow: `/input` → `/camera` → `/backgrounds` → `/prompts` → `/processing` → `/result`; gallery at `/gallery`.
+
+- **State**: Zustand `src/store/photo-booth.ts` for session; TanStack Query for API calls.
+- **Backend**: All Firebase Admin + Gemini in `src/app/api/*` only.
+- **Data**: Backgrounds/prompts in `src/data/`; types in `src/types/`.
+- **Reference**: Flutter app at `C:\code\flutter\photo_booth_ai` for feature parity.
+- **Docs**: `docs/` and `AGENTS.md` for architecture, security, branding.
+- **Deploy**: Vercel; env via `.env.local` / Vercel dashboard — never commit secrets.
+- Keep changes minimal; match existing patterns; no commits unless the user asks.

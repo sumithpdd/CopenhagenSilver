@@ -28,6 +28,9 @@ export interface PhotoPrompt {
   emoji?: string;
 }
 
+export type PhotoVisibility = 'public' | 'hidden';
+export type ModerationStatus = 'approved' | 'pending' | 'rejected';
+
 export interface PhotoBoothPhoto {
   id: string;
   sessionId: string;
@@ -40,6 +43,14 @@ export interface PhotoBoothPhoto {
   customPrompt?: string;
   photoCode: string;
   createdAt: Date;
+  /** Public gallery visibility (admin can hide without deleting). */
+  visibility?: PhotoVisibility;
+  moderationStatus?: ModerationStatus;
+  /** User opted in to community gallery at capture time. */
+  consentGalleryShare?: boolean;
+  consentTermsAcceptedAt?: Date | string;
+  moderationNote?: string;
+  updatedAt?: Date | string;
   metadata?: {
     processingTime?: number;
     dimensions?: { width: number; height: number };

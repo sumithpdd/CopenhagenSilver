@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Cursor users:** See [AGENTS.md](./AGENTS.md) and `.cursor/rules/` + `.cursor/commands/` for the equivalent setup.
+
 ## Project Overview
 
 **Sitecore Silver Photo Booth** - React/Next.js conversion of a Flutter photo booth app for the Sitecore 25-year anniversary event in Copenhagen (June 11, 2026).

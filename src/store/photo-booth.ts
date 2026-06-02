@@ -7,6 +7,11 @@ interface PhotoBoothState {
   initializeSession: (userName: string, userEmail?: string) => void;
   clearSession: () => void;
 
+  // GDPR consent (required before booth flow)
+  consentTermsAccepted: boolean;
+  consentGalleryShare: boolean;
+  setConsent: (termsAccepted: boolean, galleryShare: boolean) => void;
+
   // Photo
   capturedPhoto: string | null;
   setCapturedPhoto: (photo: string | null) => void;
@@ -41,6 +46,8 @@ interface PhotoBoothState {
 
 const initialState = {
   session: null,
+  consentTermsAccepted: false,
+  consentGalleryShare: false,
   capturedPhoto: null,
   selectedBackground: null,
   selectedPrompt: null,
@@ -66,6 +73,12 @@ export const usePhotoBoothStore = create<PhotoBoothState>((set) => ({
     }),
 
   clearSession: () => set({ session: null }),
+
+  setConsent: (termsAccepted, galleryShare) =>
+    set({
+      consentTermsAccepted: termsAccepted,
+      consentGalleryShare: galleryShare,
+    }),
 
   setCapturedPhoto: (photo) => set({ capturedPhoto: photo }),
 

@@ -1,0 +1,16 @@
+---
+description: React/Next.js component patterns for the photo booth
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# React Patterns
+
+- Client interactivity: `'use client'` at top of file.
+- Session/selections: `usePhotoBoothStore` from `@/store/photo-booth`.
+- Server data: `useQuery` / `useMutation` → fetch `/api/*`, not Firebase SDK directly.
+- Forms: React Hook Form + `zodResolver` + schemas from `@/lib/validators`.
+- Lists: stable `key={item.id}` on mapped elements.
+- Static images: `next/image` for `public/` assets; `<img>` for Firebase Storage URLs.
+- Optional chaining on `session` (`session?.userName`) — store may be uninitialized.
+- Tailwind: silver palette (`silver-400`, `silver-500`), dark bg `#1a1a1a` — see `docs/BRANDING_GUIDE.md`.

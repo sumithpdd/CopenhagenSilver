@@ -17,7 +17,10 @@ All documentation is in the `docs/` folder. Start here:
 | **[docs/02_FEATURES.md](docs/02_FEATURES.md)** | ✨ Feature overview |
 | **[docs/03_DEVELOPMENT.md](docs/03_DEVELOPMENT.md)** | 💻 Development guide |
 | **[docs/04_TROUBLESHOOTING.md](docs/04_TROUBLESHOOTING.md)** | 🔧 Common issues & fixes |
-| **[CLAUDE.md](./CLAUDE.md)** | 👨‍💻 Developer guide (for IDE) |
+| **[CLAUDE.md](./CLAUDE.md)** | 👨‍💻 Developer guide (Claude Code) |
+| **[AGENTS.md](./AGENTS.md)** | 🤖 Developer guide (Cursor) |
+| **[.cursor/rules/](./.cursor/rules/)** | Auto-applied Cursor rules |
+| **[.cursor/commands/](./.cursor/commands/)** | Cursor slash commands (`/verify`, `/safety-check`) |
 | **[docs/VERCEL_DEPLOY.md](docs/VERCEL_DEPLOY.md)** | 🚀 Deploy to Vercel |
 | **[docs/SECURITY.md](docs/SECURITY.md)** | 🔐 Security best practices |
 | **[docs/BRANDING_GUIDE.md](docs/BRANDING_GUIDE.md)** | 🎨 Design system & colors |

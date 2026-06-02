@@ -1,0 +1,16 @@
+---
+description: Sitecore Silver visual design (Tailwind, dark theme)
+globs: "**/*.{tsx,css}"
+alwaysApply: false
+---
+
+# Branding
+
+Event: Sitecore Silver, Tivoli Copenhagen, June 11 2026.
+
+- **Colors**: silver `#b8b8b8` (400), dark `#1a1a1a`, gold `#d4af37` accents.
+- **Theme**: dark-first; white/silver text on dark backgrounds.
+- **Buttons**: `bg-gradient-to-br from-silver-500 to-silver-600`, hover scale/shadow.
+- **Typography**: system stack; H1 large with silver gradient `bg-clip-text`.
+- **Kiosk**: large touch targets, `md:`/`lg:` responsive grids.
+- Full spec: `docs/BRANDING_GUIDE.md`, `tailwind.config.ts`, `src/app/globals.css`.

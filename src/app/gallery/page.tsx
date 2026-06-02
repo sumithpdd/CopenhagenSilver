@@ -2,6 +2,10 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { PhotoPreviewModal, PhotoPreviewData } from '@/components/photo-booth/PhotoPreviewModal';
+import { BoothLayout } from '@/components/common/BoothLayout';
+import { FormInput } from '@/components/ui/FormInput';
+import { GDPR_FOOTER } from '@/lib/gdpr';
 
 interface GalleryPhoto {
   id: string;
@@ -9,6 +13,7 @@ interface GalleryPhoto {
   userName: string;
   backgroundId: string;
   promptId: string;
+  originalPhotoUrl: string;
   compositedPhotoUrl: string;
   createdAt: string;
 }
@@ -19,12 +24,11 @@ export default function GalleryPage() {
   const [galleryPhotos, setGalleryPhotos] = useState<GalleryPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previewPhoto, setPreviewPhoto] = useState<PhotoPreviewData | null>(null);
 
-  // Fetch photos from Firebase
   useEffect(() => {
     async function fetchPhotos() {
       try {
-        console.log('📸 Fetching gallery photos...');
         const response = await fetch('/api/gallery?limit=100&offset=0');
 
         if (!response.ok) {
@@ -32,15 +36,21 @@ export default function GalleryPage() {
         }
 
         const result = await response.json();
-        console.log('✅ Gallery fetched:', result);
 
         if (result.success && result.data?.photos) {
-          setGalleryPhotos(result.data.photos);
+          setGalleryPhotos(
+            result.data.photos.map((p: GalleryPhoto) => ({
+              ...p,
+              createdAt:
+                typeof p.createdAt === 'string'
+                  ? p.createdAt
+                  : new Date(p.createdAt).toISOString(),
+            }))
+          );
         } else {
           setGalleryPhotos([]);
         }
       } catch (err) {
-        console.error('❌ Error fetching gallery:', err);
         setError(err instanceof Error ? err.message : 'Failed to load gallery');
         setGalleryPhotos([]);
       } finally {
@@ -62,55 +72,55 @@ export default function GalleryPage() {
     return matchesSearch && matchesCategory;
   });
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="py-4 px-4 border-b border-silver-400 border-opacity-20">
-        <Link href="/" className="text-2xl font-bold silver-accent hover:text-silver-300 transition">
-          ← Sitecore Silver
-        </Link>
-      </header>
+  const openPreview = (photo: GalleryPhoto) => {
+    setPreviewPhoto({
+      photoCode: photo.photoCode,
+      userName: photo.userName,
+      compositedPhotoUrl: photo.compositedPhotoUrl,
+      originalPhotoUrl: photo.originalPhotoUrl,
+      backgroundId: photo.backgroundId,
+      createdAt: photo.createdAt,
+    });
+  };
 
-      {/* Main Content */}
-      <main className="flex-1 p-4">
+  return (
+    <BoothLayout>
+      <div className="p-4 py-8">
         <div className="max-w-6xl mx-auto space-y-8">
-          {/* Title */}
           <div className="text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-2 silver-accent">
-              Community Gallery
-            </h2>
-            <p className="text-silver-300">
-              Browse all photos from the Sitecore Silver celebration
+            <h2 className="page-title mb-2 silver-accent">Community Gallery</h2>
+            <p className="page-subtitle">
+              Tap a photo to view full size, download, or print
             </p>
           </div>
 
-          {/* Search */}
           <div className="flex flex-col md:flex-row gap-4">
-            <input
+            <FormInput
               type="text"
               placeholder="Search by photo code or name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 px-4 py-2 bg-black border border-silver-400 rounded text-white placeholder-silver-300 focus:outline-none focus:ring-2 focus:ring-silver-400"
+              className="flex-1"
             />
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
-              className="px-4 py-2 bg-silver-600 text-black font-bold rounded hover:bg-silver-500 transition"
+              className="btn-silver-outline"
             >
               Clear
             </button>
           </div>
 
-          {/* Category Filter */}
           <div className="flex flex-wrap gap-2">
             {['all', 'heritage', 'celebration', 'innovation'].map((category) => (
               <button
                 key={category}
+                type="button"
                 onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded transition ${
+                className={`px-4 py-2 rounded-lg transition ${
                   selectedCategory === category
-                    ? 'bg-silver-400 text-black font-bold'
-                    : 'silver-bg hover:bg-silver-500'
+                    ? 'btn-silver !py-2'
+                    : 'btn-silver-outline !py-2'
                 }`}
               >
                 {category === 'all'
@@ -120,7 +130,6 @@ export default function GalleryPage() {
             ))}
           </div>
 
-          {/* Loading State */}
           {loading && (
             <div className="text-center py-12">
               <div className="animate-spin inline-block">
@@ -130,22 +139,21 @@ export default function GalleryPage() {
             </div>
           )}
 
-          {/* Error State */}
           {error && !loading && (
             <div className="text-center py-12 bg-red-900 bg-opacity-20 rounded p-6">
               <p className="text-red-400">❌ {error}</p>
             </div>
           )}
 
-          {/* Photos Grid */}
           {!loading && filteredPhotos.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {filteredPhotos.map((photo) => (
-                <div
+                <button
                   key={photo.id}
-                  className="group relative overflow-hidden rounded-lg silver-bg hover:ring-4 hover:ring-silver-400 transition cursor-pointer"
+                  type="button"
+                  onClick={() => openPreview(photo)}
+                  className="group relative overflow-hidden rounded-lg silver-bg hover:ring-4 hover:ring-silver-400 transition text-left w-full"
                 >
-                  {/* Image */}
                   <div className="relative w-full h-48 bg-black">
                     <img
                       src={photo.compositedPhotoUrl}
@@ -154,49 +162,45 @@ export default function GalleryPage() {
                     />
                   </div>
 
-                  {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-60 group-hover:opacity-80 transition" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-60 group-hover:opacity-80 transition pointer-events-none" />
 
-                  {/* Info */}
-                  <div className="absolute inset-0 flex flex-col justify-end p-3">
+                  <div className="absolute inset-0 flex flex-col justify-end p-3 pointer-events-none">
                     <p className="text-xs text-silver-200">{photo.photoCode}</p>
                     <p className="font-bold text-white">{photo.userName}</p>
-                    <p className="text-xs text-silver-300">{new Date(photo.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-silver-300">
+                      {new Date(photo.createdAt).toLocaleDateString()} · Tap to view
+                    </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 silver-bg rounded-lg">
-              <p className="text-silver-400 text-lg">No photos found</p>
-              <p className="text-silver-300 mt-2">
-                Be the first to create one!
-              </p>
-              <Link
-                href="/input"
-                className="inline-block mt-4 px-6 py-2 bg-silver-400 text-black font-bold rounded hover:bg-silver-500 transition"
-              >
-                Create Photo →
-              </Link>
-            </div>
+            !loading && (
+              <div className="text-center py-12 silver-bg rounded-lg">
+                <p className="text-silver-400 text-lg">No photos found</p>
+                <p className="text-silver-300 mt-2">Be the first to create one!</p>
+                <Link href="/input" className="inline-block mt-4 btn-silver">
+                  Create Photo →
+                </Link>
+              </div>
+            )
           )}
 
-          {/* Create Button */}
-          <div className="text-center">
-            <Link
-              href="/input"
-              className="inline-block px-8 py-3 bg-silver-400 text-black font-bold rounded hover:bg-silver-500 transition text-lg"
-            >
+          <div className="text-center space-y-4">
+            <Link href="/input" className="btn-silver text-lg px-8 inline-block">
               📸 Create Your Photo
             </Link>
+            <p className="text-xs text-silver-500 max-w-lg mx-auto leading-relaxed">
+              {GDPR_FOOTER}{' '}
+              <Link href="/privacy" className="link-sitecore">
+                Privacy notice
+              </Link>
+            </p>
           </div>
         </div>
-      </main>
+      </div>
 
-      {/* Footer */}
-      <footer className="py-4 px-4 border-t border-silver-400 border-opacity-20 text-center text-sm text-silver-400">
-        <p>© 2026 Sitecore | 25 Years of Innovation</p>
-      </footer>
-    </div>
+      <PhotoPreviewModal photo={previewPhoto} onClose={() => setPreviewPhoto(null)} />
+    </BoothLayout>
   );
 }

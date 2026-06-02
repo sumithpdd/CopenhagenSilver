@@ -2,16 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --color-silver-primary: #c0c0c0;
-  --color-silver-dark: #808080;
-  --color-silver-light: #e0e0e0;
-  --color-black: #202020;
-  --color-white: #ffffff;
-  --color-sitecore-red: #EB001A;
+@font-face {
+  font-family: 'Sitecore Sans';
+  src: url('/fonts/sitecore-sans.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
-  --color-silver-rgb: 192, 192, 192;
-  --color-black-rgb: 32, 32, 32;
+:root {
+  /* Sitecore Silver Celebration — aligned with sitecore.com event marketing */
+  --color-silver-primary: #e8e8e8;
+  --color-silver-dark: #808080;
+  --color-silver-light: #f5f5f5;
+  --color-black: #212121;
+  --color-white: #ffffff;
+  --color-sitecore-red: #eb001a;
+  --color-sitecore-red-hover: #c90018;
+  /** Soft accent for labels on dark backdrop (less harsh than pure red) */
+  --color-accent-muted: #c9b4cc;
+  --color-accent-silver: #d4d4d4;
+
+  --sc-bg: #0a0a0a;
+  --sc-surface: #141414;
+  --sc-text: #ffffff;
+  --sc-text-muted: #a3a3a3;
+  --sc-border: rgba(255, 255, 255, 0.14);
+  --sc-input-bg: #ffffff;
+  --sc-input-border: #d8d8d8;
+  --sc-input-text: #212121;
+  --sc-input-placeholder: #717171;
+  --sc-radius-pill: 9999px;
+  --sc-radius-input: 0.5rem;
+  --sc-focus-ring: 0 0 0 3px rgba(235, 0, 26, 0.35);
+
+  --color-silver-rgb: 232, 232, 232;
+  --color-black-rgb: 33, 33, 33;
 }
 
 * {
@@ -25,14 +51,61 @@ html {
 }
 
 body {
-  font-family: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: 'Sitecore Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--color-black);
-  color: var(--color-white);
+  background-color: var(--sc-bg);
+  color: var(--sc-text);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  letter-spacing: -0.011em;
+}
+
+/* Display typography — celebration hero */
+.display-hero {
+  font-size: clamp(3.25rem, 12vw, 5.5rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.display-lead {
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: var(--color-silver-light);
+}
+
+.display-body {
+  font-size: clamp(1.0625rem, 2vw, 1.25rem);
   line-height: 1.6;
+  color: var(--sc-text-muted);
+  max-width: 36rem;
+}
+
+.page-title {
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: var(--sc-text);
+}
+
+.page-subtitle {
+  font-size: clamp(1.125rem, 2.5vw, 1.3125rem);
+  line-height: 1.5;
+  color: var(--color-silver-light);
+  font-weight: 400;
+}
+
+.label-text {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-silver-light);
+  margin-bottom: 0.5rem;
 }
 
 /* Event Branding - Sitecore Silver */
@@ -73,8 +146,9 @@ body {
 }
 
 .silver-accent {
-  color: var(--color-silver-primary);
-  text-shadow: 0 0 10px rgba(var(--color-silver-rgb), 0.3);
+  color: var(--sc-text);
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .silver-border {
@@ -82,8 +156,573 @@ body {
 }
 
 .silver-bg {
-  background-color: rgba(var(--color-silver-rgb), 0.1);
-  border: 1px solid rgba(var(--color-silver-rgb), 0.3);
+  background-color: rgba(var(--color-silver-rgb), 0.08);
+  border: 1px solid rgba(var(--color-silver-rgb), 0.25);
+  backdrop-filter: blur(8px);
+}
+
+/* Celebration layered background (curtain + Tivoli + glow) */
+.celebration-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: #0a0a0a;
+}
+
+.celebration-backdrop__curtain {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  opacity: 0.92;
+}
+
+.celebration-backdrop__vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 20%, rgba(201, 180, 204, 0.12) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, transparent 35%, rgba(0, 0, 0, 0.5) 100%);
+  pointer-events: none;
+}
+
+.text-accent-muted {
+  color: var(--color-accent-muted);
+}
+
+.text-accent-silver {
+  color: var(--color-accent-silver);
+}
+
+/* Hero typography */
+.silver-shimmer {
+  background: linear-gradient(
+    105deg,
+    #f5f5f5 0%,
+    #c0c0c0 35%,
+    #ffffff 50%,
+    #a8a8a8 65%,
+    #e0e0e0 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: silverShimmer 6s ease-in-out infinite;
+}
+
+@keyframes silverShimmer {
+  0%,
+  100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+}
+
+.hero-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--sc-radius-pill);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(20, 20, 20, 0.75);
+  color: var(--color-silver-light);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.hero-stat-pill svg {
+  color: var(--color-accent-muted);
+}
+
+.booth-cta-card {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  text-align: left;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(
+    155deg,
+    rgba(40, 40, 40, 0.95) 0%,
+    rgba(12, 12, 12, 0.92) 100%
+  );
+  backdrop-filter: blur(12px);
+  padding: 1.5rem 1.5rem 1.35rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.booth-cta-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(201, 180, 204, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 24px 48px rgba(0, 0, 0, 0.55),
+    0 0 32px rgba(201, 180, 204, 0.12);
+}
+
+.booth-cta-card--primary {
+  border-color: rgba(235, 0, 26, 0.35);
+}
+
+.booth-cta-card--primary:hover {
+  border-color: rgba(235, 0, 26, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(235, 0, 26, 0.15) inset,
+    0 24px 48px rgba(0, 0, 0, 0.55),
+    0 0 40px rgba(235, 0, 26, 0.15);
+}
+
+.booth-cta-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.875rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--color-silver-light);
+}
+
+.booth-cta-card--primary .booth-cta-card__icon {
+  color: #fff;
+  background: linear-gradient(145deg, rgba(235, 0, 26, 0.5), rgba(235, 0, 26, 0.2));
+  border-color: rgba(235, 0, 26, 0.4);
+}
+
+.booth-cta-card__title {
+  display: block;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin-bottom: 0.35rem;
+}
+
+.booth-cta-card__desc {
+  display: block;
+  font-size: 0.9375rem;
+  color: var(--sc-text-muted);
+  line-height: 1.45;
+}
+
+.heritage-strip {
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.heritage-strip__visual {
+  position: relative;
+  height: 10rem;
+  background-size: cover;
+  background-position: center;
+}
+
+.heritage-strip__body {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+@media (min-width: 640px) {
+  .heritage-strip__body {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.heritage-strip__text {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--color-silver-light);
+  text-align: left;
+}
+
+.heritage-strip__text svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--color-accent-muted);
+}
+
+/* Buttons — Sitecore.com event page style (pill CTAs on dark) */
+.btn-lg {
+  min-height: 3.25rem;
+  padding: 0.875rem 2rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.booth-form-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(
+    165deg,
+    rgba(35, 35, 35, 0.97) 0%,
+    rgba(8, 8, 8, 0.95) 100%
+  );
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 24px 56px rgba(0, 0, 0, 0.5);
+  padding: 1.75rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .booth-form-card {
+    padding: 2rem 2.25rem;
+  }
+}
+
+.form-field {
+  margin-bottom: 0.25rem;
+}
+
+.form-field__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-field__icon {
+  position: absolute;
+  left: 1rem;
+  z-index: 1;
+  color: #717171;
+  pointer-events: none;
+  display: flex;
+}
+
+.form-field__icon-label {
+  display: inline-flex;
+  color: var(--color-accent-muted);
+}
+
+.form-input--with-icon {
+  padding-left: 3rem !important;
+  font-size: 1.0625rem !important;
+  min-height: 3.25rem;
+  border-radius: 0.625rem !important;
+  border-width: 2px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.form-field__control--error .form-input {
+  border-color: #f4595a !important;
+}
+
+.form-field__error {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #ff9a94;
+}
+
+.form-field__hint {
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--sc-text-muted);
+}
+
+.form-label {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.625rem;
+}
+
+/* Buttons — Sitecore.com event page style (pill CTAs on dark) */
+.btn-silver,
+.btn-sitecore-red,
+.btn-silver-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.6875rem 1.75rem;
+  border-radius: var(--sc-radius-pill);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+  border: none;
+}
+
+.btn-silver:disabled,
+.btn-sitecore-red:disabled,
+.btn-silver-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Primary CTA on dark backgrounds — white pill (sitecore.com hero pattern) */
+.btn-silver {
+  background: var(--color-white);
+  color: var(--color-black);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.btn-silver:hover {
+  background: #f5f5f5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-silver:active {
+  transform: translateY(0);
+  background: #e9e9e9;
+}
+
+/* Accent / register-style CTA — Sitecore red pill */
+.btn-sitecore-red {
+  background: var(--color-sitecore-red);
+  color: var(--color-white);
+  box-shadow: 0 2px 8px rgba(235, 0, 26, 0.35);
+}
+
+.btn-sitecore-red:hover {
+  background: var(--color-sitecore-red-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(235, 0, 26, 0.4);
+}
+
+.btn-sitecore-red:active {
+  transform: translateY(0);
+}
+
+/* Secondary — outline pill on dark */
+.btn-silver-outline {
+  background: transparent;
+  color: var(--sc-text);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+}
+
+.btn-silver-outline:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* Form fields — light inputs like sitecore.com lead forms */
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-family: inherit;
+  line-height: 1.5;
+  color: var(--sc-input-text);
+  background: var(--sc-input-bg);
+  border: 1px solid var(--sc-input-border);
+  border-radius: var(--sc-radius-input);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--sc-input-placeholder);
+}
+
+.form-input:hover,
+.form-textarea:hover {
+  border-color: #b5b5b5;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-sitecore-red);
+  box-shadow: var(--sc-focus-ring);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 8rem;
+}
+
+.link-sitecore {
+  color: var(--color-accent-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 500;
+}
+
+.link-sitecore:hover {
+  color: var(--color-silver-light);
+}
+
+.brand-card {
+  background: var(--sc-surface);
+  border: 1px solid var(--sc-border);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+/* Sitecore AI capability flow — 3 boxes + connector line */
+.sitecore-ai-flow__track {
+  position: absolute;
+  top: 2.75rem;
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  z-index: 0;
+}
+
+.sitecore-ai-flow__track-line {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(235, 0, 26, 0.35) 15%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(235, 0, 26, 0.35) 85%,
+    transparent 100%
+  );
+  border-radius: 2px;
+}
+
+.sitecore-ai-flow__track-line::after {
+  content: '';
+  position: absolute;
+  inset: -1px 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  animation: flowPulse 4s ease-in-out infinite;
+  opacity: 0.6;
+}
+
+@keyframes flowPulse {
+  0%,
+  100% {
+    transform: translateX(-30%);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateX(30%);
+    opacity: 0.8;
+  }
+}
+
+.sitecore-ai-flow__track-node {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.sitecore-ai-flow__track-dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-accent-muted);
+  box-shadow:
+    0 0 0 4px rgba(201, 180, 204, 0.2),
+    0 0 12px rgba(201, 180, 204, 0.35);
+}
+
+.sitecore-ai-flow__v-connector {
+  width: 2px;
+  height: 2rem;
+  background: linear-gradient(
+    180deg,
+    rgba(235, 0, 26, 0.5),
+    rgba(255, 255, 255, 0.2)
+  );
+}
+
+.sitecore-ai-flow__card {
+  position: relative;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.sitecore-ai-flow__card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.sitecore-ai-flow__card--cms {
+  border-top: 3px solid rgba(201, 180, 204, 0.85);
+}
+
+.sitecore-ai-flow__card--rag {
+  border-top: 3px solid rgba(201, 180, 204, 0.9);
+}
+
+.sitecore-ai-flow__card--data {
+  border-top: 3px solid rgba(192, 192, 192, 0.85);
+}
+
+.sitecore-ai-flow__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-black);
+  background: var(--color-white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.sitecore-ai-flow__card-divider {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.15), transparent);
+}
+
+.sitecore-ai-flow__closing {
+  border-left: 3px solid var(--color-accent-muted);
+  background: linear-gradient(
+    135deg,
+    var(--sc-surface) 0%,
+    rgba(201, 180, 204, 0.08) 100%
+  );
+}
+
+.milestone-year {
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, #f0f0f0, #a0a0a0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 /* Responsive */

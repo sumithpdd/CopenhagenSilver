@@ -1,118 +1,101 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import { BoothLayout } from '@/components/common/BoothLayout';
+import { SitecoreAiFlow } from '@/components/common/SitecoreAiFlow';
+import {
+  IconArrowRight,
+  IconCalendar,
+  IconCamera,
+  IconGallery,
+  IconMapPin,
+  IconSparkles,
+} from '@/components/icons/BoothIcons';
+import { BRAND, BRAND_ASSETS } from '@/lib/branding';
 
 export default function Home() {
   return (
-    <main className="flex-1 flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <div className="photo-booth-hero flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-4xl space-y-12 animate-fade-in">
-          {/* Logo & Branding */}
-          <div className="text-center space-y-6">
-            {/* Logo */}
-            <div className="flex justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-silver-400 to-silver-600 rounded-full blur-2xl opacity-30 scale-110"></div>
-                <Image
-                  src="/logo.jpg"
-                  alt="Sitecore Silver"
-                  width={140}
-                  height={140}
-                  className="relative rounded-full border-4 border-silver-400 shadow-2xl"
-                  priority
-                />
-              </div>
-            </div>
-
-            {/* Main Title */}
-            <div>
-              <h1 className="text-6xl md:text-8xl font-bold mb-2 tracking-tight">
-                <span className="bg-gradient-to-r from-silver-300 via-silver-400 to-silver-300 bg-clip-text text-transparent">
-                  Sitecore
-                </span>
-              </h1>
-              <h2 className="text-4xl md:text-6xl font-bold text-silver-400 mb-4">
-                Silver
-              </h2>
-            </div>
-
-            {/* Tagline */}
-            <div className="space-y-2">
-              <p className="text-2xl md:text-3xl font-light text-silver-300">
-                25 Years of Innovation
-              </p>
-              <p className="text-lg md:text-xl text-silver-400">
-                Celebrating heritage, community, and the future
-              </p>
-              <p className="text-base text-silver-500 mt-4">
-                Tivoli, Copenhagen • June 11, 2026
-              </p>
-            </div>
+    <BoothLayout hideBack>
+      <section className="relative flex flex-col items-center px-4 py-8 md:py-12">
+        <div className="w-full max-w-4xl mx-auto text-center space-y-10 animate-fade-in z-10">
+          <div className="flex flex-wrap justify-center gap-2 md:gap-3">
+            <span className="hero-stat-pill">
+              <IconSparkles size={16} />
+              25 Years
+            </span>
+            <span className="hero-stat-pill">
+              <IconMapPin size={16} />
+              Tivoli · Copenhagen
+            </span>
+            <span className="hero-stat-pill">
+              <IconCamera size={16} />
+              AI Photo Booth
+            </span>
           </div>
 
-          {/* Main Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto w-full">
-            {/* Create New Photo */}
-            <Link
-              href="/input"
-              className="group relative overflow-hidden rounded-xl p-8 bg-gradient-to-br from-silver-500 to-silver-600 hover:shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity"></div>
-              <div className="relative z-10">
-                <div className="text-5xl mb-4">📸</div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Create Photo</h2>
-                <p className="text-sm text-slate-800 opacity-90">
-                  Capture your moment through AI's creative lens
-                </p>
-              </div>
-            </Link>
-
-            {/* View Gallery */}
-            <Link
-              href="/gallery"
-              className="group relative overflow-hidden rounded-xl p-8 bg-gradient-to-br from-silver-600 to-silver-700 hover:shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-white to-transparent opacity-0 group-hover:opacity-10 transition-opacity"></div>
-              <div className="relative z-10">
-                <div className="text-5xl mb-4">🖼️</div>
-                <h2 className="text-2xl font-bold text-white mb-2">View Gallery</h2>
-                <p className="text-sm text-silver-100 opacity-90">
-                  Discover creations from the community
-                </p>
-              </div>
-            </Link>
-          </div>
-
-          {/* Event Details */}
-          <div className="border-t border-silver-500 border-opacity-30 pt-8 text-center space-y-4">
-            <div className="grid grid-cols-3 gap-4 max-w-md mx-auto text-sm">
-              <div>
-                <p className="text-silver-400 text-xs uppercase tracking-wider">Location</p>
-                <p className="text-silver-200 font-semibold">Tivoli</p>
-              </div>
-              <div>
-                <p className="text-silver-400 text-xs uppercase tracking-wider">Date</p>
-                <p className="text-silver-200 font-semibold">June 11</p>
-              </div>
-              <div>
-                <p className="text-silver-400 text-xs uppercase tracking-wider">Year</p>
-                <p className="text-silver-200 font-semibold">2026</p>
-              </div>
-            </div>
-
-            <p className="text-xs text-silver-500 uppercase tracking-widest pt-4">
-              Powered by Google Gemini AI • Secured by Firebase
+          <div className="space-y-5 px-2">
+            <div className="h-px w-32 mx-auto bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+            <h1 className="display-hero silver-shimmer">Silver</h1>
+            <p className="display-lead max-w-2xl mx-auto">{BRAND.eventSubtitle}</p>
+            <p className="text-base md:text-lg text-accent-muted font-medium tracking-wide">
+              {BRAND.eventTagline}
             </p>
           </div>
-        </div>
-      </div>
 
-      {/* Footer */}
-      <footer className="border-t border-silver-600 border-opacity-20 py-6 px-4 text-center text-sm text-silver-500">
-        <p>© 2026 Sitecore • 25 Years of Digital Excellence</p>
-      </footer>
-    </main>
+          <p className="display-body mx-auto px-2">
+            Step into the booth, choose a Copenhagen backdrop, and let Gemini transform your
+            portrait into a keepsake from the anniversary celebration.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-xl mx-auto pt-2">
+            <Link href="/input" className="booth-cta-card booth-cta-card--primary group">
+              <span className="booth-cta-card__icon group-hover:scale-105 transition-transform">
+                <IconCamera size={28} />
+              </span>
+              <span className="booth-cta-card__title">Create Photo</span>
+              <span className="booth-cta-card__desc">Capture · transform · share</span>
+            </Link>
+
+            <Link href="/gallery" className="booth-cta-card group">
+              <span className="booth-cta-card__icon group-hover:scale-105 transition-transform">
+                <IconGallery size={28} />
+              </span>
+              <span className="booth-cta-card__title">View Gallery</span>
+              <span className="booth-cta-card__desc">See the community wall</span>
+            </Link>
+          </div>
+
+          <SitecoreAiFlow />
+
+          <div className="heritage-strip max-w-2xl mx-auto w-full text-left">
+            <div
+              className="heritage-strip__visual"
+              style={{
+                backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0.2)), url('${BRAND_ASSETS.tivoliCopenhagen}')`,
+              }}
+            />
+            <div className="heritage-strip__body">
+              <p className="heritage-strip__text">
+                <IconMapPin size={22} />
+                <span>
+                  Celebrating where it began — Denmark, Tivoli, and twenty-five years of
+                  Sitecore.
+                </span>
+              </p>
+              <a
+                href={BRAND.eventUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-sitecore-red shrink-0 inline-flex items-center gap-2"
+              >
+                <IconCalendar size={18} />
+                Event details
+                <IconArrowRight size={18} />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </BoothLayout>
   );
 }

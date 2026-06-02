@@ -1,0 +1,17 @@
+---
+description: Next.js API route patterns for Firebase and Gemini
+globs: src/app/api/**/*
+alwaysApply: false
+---
+
+# API Routes
+
+- Handlers live in `src/app/api/<name>/route.ts` (`route.ts` required).
+- Validate request bodies with Zod from `src/lib/validators.ts`.
+- `GOOGLE_GEMINI_API_KEY` and Firebase Admin credentials: server `process.env` only.
+- `POST /api/composit-image`: photo (base64), background id, prompt → composited base64.
+- `POST /api/upload-photo`: session metadata + images → Storage + Firestore `photobooth`.
+- `GET /api/gallery`: query params for search, category, pagination.
+- Return `Response.json({ success, data?, error? })` consistently.
+- Validate image format (strip `data:image/...;base64,` prefix) before Gemini.
+- Use `src/lib/prompt-sanitizer.ts` when accepting user-written prompts.

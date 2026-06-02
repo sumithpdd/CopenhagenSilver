@@ -1,63 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import path from 'path';
 import sharp from 'sharp';
+import { BRAND_ASSETS } from '@/lib/branding';
+import { sanitizePrompt } from '@/lib/prompt-sanitizer';
+import {
+  generateTransformedImage,
+  getGeminiImageModel,
+} from '@/lib/gemini-image';
+
+function mimeTypeFromDataUrl(photo: string): string {
+  const match = photo.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
+  return match?.[1] ?? 'image/jpeg';
+}
 
 /**
- * Process image with Gemini API for AI transformation
+ * Process image with Gemini native image generation (@google/genai).
+ * @see https://ai.google.dev/gemini-api/docs/image-generation
  */
-async function processWithGemini(imageBase64: string, prompt: string, background: string): Promise<string> {
+async function processWithGemini(
+  imageBase64: string,
+  prompt: string,
+  background: string,
+  mimeType: string
+): Promise<string> {
   try {
-    const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
-    if (!apiKey) {
+    if (!process.env.GOOGLE_GEMINI_API_KEY) {
       console.warn('⚠️ Gemini API key not configured, using fallback enhancement');
       return enhanceImageWithSharp(imageBase64, prompt, background);
     }
 
-    console.log('🔑 [GEMINI] Initializing Gemini API');
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = getGeminiImageModel();
+    console.log('🔑 [GEMINI] Calling native image generation');
+    console.log('📝 [GEMINI] Model:', model);
+    console.log('📝 [GEMINI] Prompt:', prompt.substring(0, 60) + '...');
 
-    // Build full prompt
-    const systemPrompt = 'You are an expert image transformer. Apply creative enhancements to the photo based on the prompt while keeping the person recognizable.';
-    const fullPrompt = background && background.trim()
-      ? `${prompt}\n\nBackground theme: ${background}\n\n${systemPrompt}`
-      : `${prompt}\n\n${systemPrompt}`;
-
-    console.log('📝 [GEMINI] Sending to Gemini model');
-    console.log('📝 [GEMINI] Prompt:', prompt);
-
-    // Call Gemini API
-    const result = await model.generateContent([
-      fullPrompt,
-      {
-        inlineData: {
-          mimeType: 'image/jpeg',
-          data: imageBase64,
-        },
-      },
-    ]);
-
-    // Extract image from response
-    let base64Data: string | null = null;
-
-    if (result.response.candidates && result.response.candidates.length > 0) {
-      const candidate = result.response.candidates[0];
-      if (candidate.content && candidate.content.parts) {
-        for (const part of candidate.content.parts) {
-          if ((part as any).inlineData && (part as any).inlineData.data) {
-            base64Data = (part as any).inlineData.data;
-            console.log('✅ [GEMINI] Image data received from Gemini');
-            break;
-          }
-        }
-      }
-    }
+    const base64Data = await generateTransformedImage(
+      imageBase64,
+      prompt,
+      background,
+      mimeType
+    );
 
     if (!base64Data) {
-      console.warn('⚠️ [GEMINI] No image in response, using fallback');
+      console.warn('⚠️ [GEMINI] No image in response — falling back to Sharp');
       return enhanceImageWithSharp(imageBase64, prompt, background);
     }
 
+    console.log(
+      '✅ [GEMINI] Successfully generated image',
+      `(output ~${Math.round(base64Data.length * 0.75 / 1024)}KB)`
+    );
     return base64Data;
   } catch (error) {
     console.error('❌ [GEMINI] Error:', error);
@@ -175,6 +167,44 @@ async function enhanceImageWithSharp(imageBase64: string, prompt: string, backgr
 }
 
 /**
+ * Add Sitecore logo to image corner
+ */
+async function addLogoToImage(imageBuffer: Buffer): Promise<Buffer> {
+  try {
+    const metadata = await sharp(imageBuffer).metadata();
+    const width = metadata.width || 1200;
+    const height = metadata.height || 800;
+
+    const logoPath = path.join(
+      process.cwd(),
+      'public',
+      BRAND_ASSETS.logo.replace(/^\//, '')
+    );
+    const logoSize = Math.round(Math.min(width, height) * 0.14);
+    const padding = Math.round(logoSize * 0.35);
+
+    const logo = await sharp(logoPath)
+      .resize(logoSize, logoSize, { fit: 'inside', withoutEnlargement: true })
+      .png()
+      .toBuffer();
+
+    return await sharp(imageBuffer)
+      .composite([
+        {
+          input: logo,
+          top: padding,
+          left: padding,
+        },
+      ])
+      .jpeg({ quality: 95 })
+      .toBuffer();
+  } catch (error) {
+    console.warn('⚠️ Failed to add logo:', error);
+    return imageBuffer;
+  }
+}
+
+/**
  * Add Sitecore branding to enhanced image
  */
 async function addBranding(imageBuffer: Buffer, prompt: string): Promise<Buffer> {
@@ -252,19 +282,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract base64 from data URL if needed
+    // Sanitize prompt
+    console.log('🛡️ [API] Sanitizing prompt...');
+    const sanitizationResult = sanitizePrompt(prompt, backgroundDescription);
+    if (!sanitizationResult.isValid) {
+      console.warn('❌ [API] Prompt validation failed:', sanitizationResult.reason);
+      return NextResponse.json(
+        { success: false, error: `Prompt validation failed: ${sanitizationResult.reason}` },
+        { status: 400 }
+      );
+    }
+    const finalPrompt = sanitizationResult.sanitizedPrompt || prompt;
+
+    const mimeType = mimeTypeFromDataUrl(photo);
     const photoBase64 =
       photo.includes(',') && photo.startsWith('data:image')
         ? photo.split(',')[1]
         : photo;
 
     console.log('⚙️ [API] Processing with Gemini...');
-    const compositedBase64 = await processWithGemini(photoBase64, prompt, backgroundDescription);
+    const compositedBase64 = await processWithGemini(
+      photoBase64,
+      finalPrompt,
+      backgroundDescription ?? '',
+      mimeType
+    );
+
+    // Convert base64 to buffer and add logo
+    console.log('🎨 [API] Adding Sitecore logo...');
+    const imageBuffer = Buffer.from(compositedBase64, 'base64');
+    const imageWithLogo = await addLogoToImage(imageBuffer);
+    const finalBase64WithLogo = imageWithLogo.toString('base64');
 
     // Ensure base64 is properly formatted
-    const finalBase64 = compositedBase64.includes('data:')
-      ? compositedBase64
-      : `data:image/jpeg;base64,${compositedBase64}`;
+    const finalBase64 = finalBase64WithLogo.includes('data:')
+      ? finalBase64WithLogo
+      : `data:image/jpeg;base64,${finalBase64WithLogo}`;
 
     console.log('✅ [API] Processing complete! Response size:', finalBase64.length);
 

@@ -1,0 +1,21 @@
+---
+description: Secrets, env vars, and git safety for this repo
+alwaysApply: true
+---
+
+# Security
+
+**Never commit**: `.env.local`, `*firebase-adminsdk*.json`, `serviceAccountKey*.json`, real API keys, private keys.
+
+**Server-only env**: `GOOGLE_GEMINI_API_KEY`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_CLIENT_EMAIL`.
+
+**Public env** (`NEXT_PUBLIC_*`): Firebase web config only — still use env vars, not literals in source.
+
+```typescript
+// ✅
+const key = process.env.GOOGLE_GEMINI_API_KEY;
+// ❌
+const key = "AIzaSy...";
+```
+
+Before push: run `/safety-check`. Do not `git add -f` ignored env or service account files. See `docs/SECURITY.md`.

@@ -4,7 +4,16 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePhotoBoothStore } from '@/store/photo-booth';
 import { prompts, getAllCategories, getPromptsByCategory } from '@/data/prompts';
+import { FormTextarea } from '@/components/ui/FormInput';
+import { sanitizePrompt } from '@/lib/prompt-sanitizer';
 import { useEffect, useState } from 'react';
+
+const SUGGESTION_PROMPTS = [
+  'Transform me into a tech innovator at Sitecore with futuristic effects',
+  'Make me appear on stage celebrating 25 years of Sitecore innovation',
+  'Create a professional headshot with Sitecore Silver branding',
+  'Show me as a creative technologist in a modern workspace',
+];
 
 export default function PromptsPage() {
   const router = useRouter();
@@ -17,6 +26,8 @@ export default function PromptsPage() {
   );
 
   const [selectedCategory, setSelectedCategory] = useState<string>('heritage');
+  const [customPrompt, setCustomPrompt] = useState<string>('');
+  const [promptError, setPromptError] = useState<string>('');
   const categories = getAllCategories();
   const categoryPrompts = getPromptsByCategory(selectedCategory as any);
 
@@ -29,12 +40,41 @@ export default function PromptsPage() {
 
   const handleSelect = (prompt: typeof prompts[0]) => {
     setSelectedPrompt(prompt);
+    setCustomPrompt('');
+    setPromptError('');
   };
 
-  const handleContinue = () => {
-    if (selectedPrompt) {
+  const handleCustomPromptChange = (value: string) => {
+    setCustomPrompt(value);
+    setPromptError('');
+  };
+
+  const validateAndContinue = () => {
+    if (customPrompt.trim()) {
+      // Validate custom prompt
+      const result = sanitizePrompt(customPrompt, selectedBackground?.name);
+      if (!result.isValid) {
+        setPromptError(result.reason || 'Invalid prompt');
+        return;
+      }
+      // Create custom prompt object and set it
+      const customPromptObj = {
+        id: 'custom',
+        title: 'Custom Prompt',
+        description: customPrompt.substring(0, 50) + '...',
+        emoji: '✨',
+        text: result.sanitizedPrompt || customPrompt,
+      };
+      setSelectedPrompt(customPromptObj as any);
+      router.push('/processing');
+    } else if (selectedPrompt) {
       router.push('/processing');
     }
+  };
+
+  const applyCustomPromptSuggestion = (suggestion: string) => {
+    setCustomPrompt(suggestion);
+    setPromptError('');
   };
 
   if (!session || !capturedPhoto || !selectedBackground) return null;
@@ -79,39 +119,90 @@ export default function PromptsPage() {
               ))}
             </div>
 
-            {/* Prompts Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {categoryPrompts.map((prompt) => (
-                <button
-                  key={prompt.id}
-                  onClick={() => handleSelect(prompt)}
-                  className={`p-4 rounded-lg transition-all duration-300 ${
-                    selectedPrompt?.id === prompt.id
-                      ? 'ring-4 ring-silver-400 bg-silver-500 text-black'
-                      : 'silver-bg hover:bg-silver-500'
-                  }`}
-                >
-                  <div className="text-3xl mb-2">{prompt.emoji}</div>
-                  <h3 className="text-lg font-bold mb-1">{prompt.title}</h3>
-                  <p className="text-sm opacity-90">{prompt.description}</p>
-                  {selectedPrompt?.id === prompt.id && (
-                    <div className="mt-3 text-center">✓ Selected</div>
-                  )}
-                </button>
-              ))}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Preset Prompts */}
+              <div>
+                <h3 className="text-xl font-bold mb-4 silver-accent">
+                  Preset Prompts
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {categoryPrompts.map((prompt) => (
+                    <button
+                      key={prompt.id}
+                      onClick={() => handleSelect(prompt)}
+                      className={`p-3 rounded-lg transition-all duration-300 text-left ${
+                        selectedPrompt?.id === prompt.id && !customPrompt
+                          ? 'ring-4 ring-silver-400 bg-silver-500 text-black'
+                          : 'silver-bg hover:bg-silver-500'
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">{prompt.emoji}</div>
+                      <h4 className="text-sm font-bold mb-1">{prompt.title}</h4>
+                      <p className="text-xs opacity-90">{prompt.description}</p>
+                      {selectedPrompt?.id === prompt.id && !customPrompt && (
+                        <div className="mt-2 text-center text-xs">✓</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Prompt */}
+              <div>
+                <h3 className="text-xl font-bold mb-4 silver-accent">
+                  Or Create Your Own
+                </h3>
+
+                {/* Suggestion Chips */}
+                <div className="mb-4 space-y-2">
+                  <p className="text-sm text-silver-300 mb-2">Quick suggestions:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {SUGGESTION_PROMPTS.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => applyCustomPromptSuggestion(suggestion)}
+                        className="text-xs px-3 py-1 bg-silver-600 hover:bg-silver-500 rounded transition"
+                      >
+                        {suggestion.substring(0, 25)}...
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Prompt Input */}
+                <FormTextarea
+                  value={customPrompt}
+                  onChange={(e) => handleCustomPromptChange(e.target.value)}
+                  placeholder="Describe your vision... (max 2000 characters)"
+                  maxLength={2000}
+                  className="min-h-[8rem]"
+                />
+
+                {/* Character Count */}
+                <div className="text-right text-xs text-silver-300 mt-1">
+                  {customPrompt.length}/2000
+                </div>
+
+                {/* Error Message */}
+                {promptError && (
+                  <div className="mt-2 p-2 bg-red-900 border border-red-700 rounded text-red-200 text-sm">
+                    🚫 {promptError}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Continue Button */}
-            {selectedPrompt && (
-              <div className="flex justify-center">
-                <button
-                  onClick={handleContinue}
-                  className="px-8 py-3 bg-silver-400 text-black font-bold rounded hover:bg-silver-500 transition text-lg"
-                >
-                  Create Magic →
-                </button>
-              </div>
-            )}
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={validateAndContinue}
+                disabled={!selectedPrompt && !customPrompt.trim()}
+                className="btn-silver text-lg px-10"
+              >
+                Create Magic →
+              </button>
+            </div>
           </div>
         </div>
       </main>

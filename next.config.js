@@ -6,6 +6,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'delivery-sitecore.sitecorecontenthub.cloud',
+      },
     ],
   },
   webpack: (config, { isServer }) => {

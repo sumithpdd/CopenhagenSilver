@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePhotoBoothStore } from '@/store/photo-booth';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function ProcessingPage() {
   const router = useRouter();
@@ -12,8 +12,11 @@ export default function ProcessingPage() {
   const selectedBackground = usePhotoBoothStore((state) => state.selectedBackground);
   const selectedPrompt = usePhotoBoothStore((state) => state.selectedPrompt);
   const setCompositedPhoto = usePhotoBoothStore((state) => state.setCompositedPhoto);
+  const consentTermsAccepted = usePhotoBoothStore((state) => state.consentTermsAccepted);
+  const consentGalleryShare = usePhotoBoothStore((state) => state.consentGalleryShare);
 
   const [error, setError] = useState<string | null>(null);
+  const processingStarted = useRef(false);
 
   // Redirect if missing required data
   useEffect(() => {
@@ -81,6 +84,8 @@ export default function ProcessingPage() {
         uploadFormData.append('compositedPhoto', compositedPhoto);
         uploadFormData.append('backgroundId', selectedBackground.id);
         uploadFormData.append('promptId', selectedPrompt.id);
+        uploadFormData.append('consentTermsAccepted', String(consentTermsAccepted));
+        uploadFormData.append('consentGalleryShare', String(consentGalleryShare));
 
         const uploadResponse = await fetch('/api/upload-photo', {
           method: 'POST',
@@ -96,6 +101,13 @@ export default function ProcessingPage() {
         } else {
           const uploadResult = JSON.parse(uploadText);
           console.log('✅ Upload result:', uploadResult.success ? 'SUCCESS' : uploadResult.error);
+          if (uploadResult.success && uploadResult.data?.photoCode) {
+            setCompositedPhoto(
+              compositedPhoto,
+              uploadResult.data.photoId,
+              uploadResult.data.photoCode
+            );
+          }
         }
 
         // Step 3: Redirect to result
@@ -116,6 +128,10 @@ export default function ProcessingPage() {
     }
 
     if (capturedPhoto && selectedBackground && selectedPrompt) {
+      if (processingStarted.current) {
+        return;
+      }
+      processingStarted.current = true;
       console.log('📊 Dependencies ready, starting processImage()');
       processImage();
     } else {
@@ -125,7 +141,16 @@ export default function ProcessingPage() {
         prompt: !!selectedPrompt,
       });
     }
-  }, [capturedPhoto, selectedBackground, selectedPrompt, router, setCompositedPhoto, session]);
+  }, [
+    capturedPhoto,
+    selectedBackground,
+    selectedPrompt,
+    router,
+    setCompositedPhoto,
+    session,
+    consentTermsAccepted,
+    consentGalleryShare,
+  ]);
 
   if (!session || !capturedPhoto || !selectedBackground || !selectedPrompt)
     return null;

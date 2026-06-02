@@ -1,12 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { DM_Sans } from 'next/font/google';
 import './globals.css';
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '700'],
-  variable: '--font-dm-sans',
-});
 
 export const metadata: Metadata = {
   title: 'Sitecore Silver • 25 Years of Innovation',
@@ -35,11 +28,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={dmSans.variable}>
-      <body className="bg-black text-white antialiased font-dm-sans">
-        <div className="photo-booth-container min-h-screen flex flex-col">
-          {children}
-        </div>
+    <html lang="en">
+      <body className="bg-sc-bg text-sc-text antialiased font-sitecore min-h-screen">
+        {children}
       </body>
     </html>
   );

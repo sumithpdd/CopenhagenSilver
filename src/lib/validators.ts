@@ -4,13 +4,13 @@ import { z } from 'zod';
 export const userInputSchema = z.object({
   userName: z
     .string()
+    .trim()
     .min(2, 'Name must be at least 2 characters')
     .max(50, 'Name must be less than 50 characters'),
-  userEmail: z
-    .string()
-    .email('Invalid email address')
-    .optional()
-    .or(z.literal('')),
+  userEmail: z.union([
+    z.literal(''),
+    z.string().trim().email('Invalid email address'),
+  ]),
 });
 
 export type UserInputFormData = z.infer<typeof userInputSchema>;

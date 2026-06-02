@@ -1,38 +1,75 @@
 /**
  * Background options for Sitecore Silver Photo Booth
- * Each background represents a theme from the 25-year celebration
+ * Digital Swag + Content Hub celebration imagery
  */
 
 import { Background } from '@/types';
+import { BRAND_ASSETS } from '@/lib/branding';
 
 export const backgrounds: Background[] = [
   {
-    id: 'heritage',
-    name: 'Sitecore Heritage',
-    description: '25 years of innovation from Denmark',
-    imageUrl: '/heritage.svg',
+    id: 'silver-curtain',
+    name: 'Silver Celebration',
+    description: 'Official event backdrop — dark curtain texture',
+    imageUrl: BRAND_ASSETS.pageBackdrop,
     category: 'heritage',
   },
   {
-    id: 'celebration',
-    name: 'Celebrating Together',
-    description: 'Community and milestone moment',
-    imageUrl: '/celebration.svg',
+    id: 'tivoli',
+    name: 'Tivoli Copenhagen',
+    description:
+      'Historic Tivoli Gardens and Copenhagen skyline — Silver Celebration venue in Denmark',
+    imageUrl: BRAND_ASSETS.tivoliCopenhagen,
     category: 'celebration',
+  },
+  {
+    id: 'desktop-v3',
+    name: 'Silver Desktop',
+    description: 'Official celebration backdrop — Digital Swag',
+    imageUrl: BRAND_ASSETS.desktopBackdropV3,
+    category: 'heritage',
+  },
+  {
+    id: 'desktop',
+    name: 'Silver Stage',
+    description: 'Full-stage video backdrop with logo',
+    imageUrl: BRAND_ASSETS.desktopBackdrop,
+    category: 'heritage',
+  },
+  {
+    id: 'desktop-v2',
+    name: 'Silver Spotlight',
+    description: 'Dramatic silver lighting — event style',
+    imageUrl: BRAND_ASSETS.desktopBackdropV2,
+    category: 'innovation',
+  },
+  {
+    id: 'linkedin-v1',
+    name: 'Community Mosaic',
+    description: 'LinkedIn celebration cover — together in silver',
+    imageUrl: BRAND_ASSETS.linkedinCoverV1,
+    category: 'celebration',
+  },
+  {
+    id: 'linkedin-v2',
+    name: 'Silver Horizon',
+    description: 'LinkedIn cover — 25 years forward',
+    imageUrl: BRAND_ASSETS.linkedinCoverV2,
+    category: 'celebration',
+  },
+  {
+    id: 'heritage',
+    name: 'Silver Curtain',
+    description: 'Classic curtain texture — Nordic elegance',
+    imageUrl: BRAND_ASSETS.curtainTexture,
+    category: 'heritage',
   },
   {
     id: 'innovation',
     name: 'Future Ready',
-    description: 'AI and digital innovation',
-    imageUrl: '/innovation.svg',
+    description: 'Composable DXP and AI innovation',
+    imageUrl: BRAND_ASSETS.desktopBackdropV2,
     category: 'innovation',
-  },
-  {
-    id: 'your-story',
-    name: 'Your Story',
-    description: 'Be part of Sitecore\'s 25-year legacy',
-    imageUrl: '/your-story.svg',
-    category: 'celebration',
   },
 ];
 

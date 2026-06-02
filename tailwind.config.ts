@@ -27,11 +27,22 @@ const config: Config = {
           accent: '#c9b4cc',
           gold: '#d4af37',
           red: '#EB001A',
+          'red-hover': '#c90018',
         },
+        sc: {
+          bg: '#0a0a0a',
+          surface: '#141414',
+          muted: '#a3a3a3',
+          border: 'rgba(255, 255, 255, 0.12)',
+        },
+        'accent-muted': '#c9b4cc',
       },
       fontFamily: {
-        'dm-sans': ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
-        sans: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
+        sitecore: ['Sitecore Sans', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        sans: ['Sitecore Sans', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+      },
+      borderRadius: {
+        pill: '9999px',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in',
