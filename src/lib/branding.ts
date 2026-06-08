@@ -1,5 +1,7 @@
 /**
- * Sitecore Silver Celebration — brand assets and event links
+ * Legacy branding exports — used by Sitecore-specific components.
+ * Prefer useAppConfig() in client components and resolveAppConfig() on the server.
+ * Set APP_PRESET=sitecore-silver in .env.local for the Copenhagen event defaults.
  */
 
 import { SITECORE_OFFICIAL } from '@/lib/sitecore-brand';

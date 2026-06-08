@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { BoothLayout } from '@/components/common/BoothLayout';
-import { SitecoreAiFlow } from '@/components/common/SitecoreAiFlow';
+import { useAppConfig } from '@/components/providers/app-config-provider';
+import { SitecoreAiFlow } from '@/components/sitecore';
 import {
   IconArrowRight,
   IconCalendar,
@@ -11,9 +12,10 @@ import {
   IconMapPin,
   IconSparkles,
 } from '@/components/icons/BoothIcons';
-import { BRAND, BRAND_ASSETS } from '@/lib/branding';
 
 export default function Home() {
+  const { branding, features } = useAppConfig();
+
   return (
     <BoothLayout hideBack>
       <section className="relative flex flex-col items-center px-4 py-8 md:py-12">
@@ -35,16 +37,18 @@ export default function Home() {
 
           <div className="space-y-5 px-2">
             <div className="h-px w-32 mx-auto bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-            <h1 className="display-hero silver-shimmer">Silver</h1>
-            <p className="display-lead max-w-2xl mx-auto">{BRAND.eventSubtitle}</p>
+            <h1 className="display-hero silver-shimmer">
+              {branding.eventTitle.split(' ').slice(-1)[0] ?? 'Booth'}
+            </h1>
+            <p className="display-lead max-w-2xl mx-auto">{branding.eventSubtitle}</p>
             <p className="text-base md:text-lg text-accent-muted font-medium tracking-wide">
-              {BRAND.eventTagline}
+              {branding.eventTagline}
             </p>
           </div>
 
           <p className="display-body mx-auto px-2">
-            Step into the booth, choose a Copenhagen backdrop, and let Gemini transform your
-            portrait into a keepsake from the anniversary celebration.
+            Step into the booth, choose a backdrop, and let AI transform your portrait into a
+            keepsake{branding.eventLocation ? ` from ${branding.eventLocation}` : ''}.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-xl mx-auto pt-2">
@@ -56,6 +60,7 @@ export default function Home() {
               <span className="booth-cta-card__desc">Capture · transform · share</span>
             </Link>
 
+            {features.gallery && (
             <Link href="/gallery" className="booth-cta-card group">
               <span className="booth-cta-card__icon group-hover:scale-105 transition-transform">
                 <IconGallery size={28} />
@@ -63,27 +68,30 @@ export default function Home() {
               <span className="booth-cta-card__title">View Gallery</span>
               <span className="booth-cta-card__desc">See the community wall</span>
             </Link>
+            )}
           </div>
 
-          <SitecoreAiFlow />
+          {features.sitecoreMarketing && <SitecoreAiFlow />}
 
+          {branding.eventUrl && (
           <div className="heritage-strip max-w-2xl mx-auto w-full text-left">
             <div
               className="heritage-strip__visual"
               style={{
-                backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0.2)), url('${BRAND_ASSETS.tivoliCopenhagen}')`,
+                backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0.2)), url('/branding/tivoli-copenhagen.jpg')`,
               }}
             />
             <div className="heritage-strip__body">
               <p className="heritage-strip__text">
                 <IconMapPin size={22} />
                 <span>
-                  Celebrating where it began — Denmark, Tivoli, and twenty-five years of
-                  Sitecore.
+                  {branding.eventLocation
+                    ? `Celebrating at ${branding.eventLocation}.`
+                    : branding.eventSubtitle}
                 </span>
               </p>
               <a
-                href={BRAND.eventUrl}
+                href={branding.eventUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-sitecore-red shrink-0 inline-flex items-center gap-2"
@@ -94,6 +102,7 @@ export default function Home() {
               </a>
             </div>
           </div>
+          )}
         </div>
       </section>
     </BoothLayout>

@@ -1,18 +1,28 @@
-# Architecture Guide - Sitecore Silver Photo Booth
+# Architecture Guide - AI Photo Booth
 
-This guide explains how the app is structured and how different parts work together.
+This guide explains how the app is structured and how different parts work together. The app supports **standalone** and **Sitecore Marketplace** modes from the same codebase.
 
 ## Big Picture: How the App Works
 
 ```
 User Interface (React Components)
             ↓
+Providers (Marketplace SDK + App Config)
+            ↓
 State Management (Zustand Stores)
             ↓
-API Routes (Next.js Backend)
+API Routes (Next.js Backend — secured when API_SECRET set)
             ↓
-External Services (Firebase, Gemini AI)
+External Services (Firebase, Gemini AI, optional Sitecore CM)
 ```
+
+## Runtime modes
+
+| Mode | Trigger | SDK | Branding source |
+|------|---------|-----|-----------------|
+| Standalone | Direct URL or `NEXT_PUBLIC_STANDALONE_MODE=true` | Skipped | `APP_*` env vars + `/api/config` |
+| Marketplace | Embedded in Sitecore iframe | `@sitecore-marketplace-sdk` | Same + optional CM |
+| Sitecore Silver | `APP_PRESET=sitecore-silver` | Either | Copenhagen 2026 defaults |
 
 **In Simple Terms:**
 1. User opens the app → sees a **React Component**
@@ -43,9 +53,22 @@ app/
 **API Routes** (Backend endpoints):
 ```
 app/api/
-├── composit-image/route.ts   # POST - Use Gemini to combine images
-├── upload-photo/route.ts     # POST - Save photo to Firebase
-└── gallery/route.ts          # GET - Fetch photos from Firestore
+├── config/route.ts           # GET - App branding, backgrounds, prompts
+├── auth/session/route.ts     # GET - API session cookie (when secured)
+├── composit-image/route.ts   # POST - Gemini image generation (secured)
+├── upload-photo/route.ts     # POST - Save to Firebase (secured)
+├── gallery/route.ts          # GET - Public gallery
+├── sitecore/status/route.ts  # GET - CM credentials configured?
+└── admin/*                   # Staff moderation (ADMIN_SECRET)
+```
+
+**Code split (Sitecore vs generic):**
+```
+src/lib/core/          # app-config, api-auth, api-client — no Sitecore dependency
+src/lib/sitecore/      # authoring-api, brand-rules — optional
+src/components/booth/  # BoothLogo, BoothBackdrop — generic
+src/components/sitecore/ # SitecoreAiFlow — optional marketing
+src/components/providers/ # MarketplaceProvider, AppConfigProvider
 ```
 
 ### `src/components/` - React Components

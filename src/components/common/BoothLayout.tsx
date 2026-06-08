@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { ReactNode } from 'react';
-import { SitecoreLogo } from './SitecoreLogo';
-import { CelebrationBackdrop } from './CelebrationBackdrop';
-import { BRAND } from '@/lib/branding';
+import { BoothBackdrop } from '@/components/booth/BoothBackdrop';
+import { BoothLogo } from '@/components/booth/BoothLogo';
+import { useAppConfig } from '@/components/providers/app-config-provider';
 
 interface BoothLayoutProps {
   children: ReactNode;
@@ -17,13 +17,15 @@ export function BoothLayout({
   hideBack = false,
   hideFooter = false,
 }: BoothLayoutProps) {
+  const { branding, features } = useAppConfig();
+
   return (
     <div className="min-h-screen flex flex-col relative">
-      <CelebrationBackdrop />
+      <BoothBackdrop />
 
       <header className="relative z-20 py-4 px-4 md:px-8 border-b border-sc-border bg-sc-surface/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-          <SitecoreLogo size="md" />
+          <BoothLogo size="md" />
           {!hideBack && (
             <Link href="/" className="btn-silver-outline !py-2 !px-4 text-sm shrink-0">
               ← Home
@@ -36,18 +38,22 @@ export function BoothLayout({
 
       {!hideFooter && (
         <footer className="relative z-20 py-5 px-4 border-t border-sc-border text-center text-sm text-sc-muted bg-sc-surface/80 backdrop-blur-md">
-          <p className="font-medium text-white">{BRAND.eventTitle}</p>
-          <p className="text-sc-muted">{BRAND.eventTagline}</p>
+          <p className="font-medium text-white">{branding.eventTitle}</p>
+          <p className="text-sc-muted">{branding.eventTagline}</p>
           <p className="text-xs mt-2 text-sc-muted">
-            © 2026 Sitecore · {BRAND.eventSubtitle}
+            © {new Date().getFullYear()} {branding.copyrightHolder} · {branding.eventSubtitle}
             {' · '}
             <Link href="/privacy" className="underline hover:text-silver-300">
               Privacy
             </Link>
-            {' · '}
-            <Link href="/admin" className="underline hover:text-silver-300">
-              Admin
-            </Link>
+            {features.admin && (
+              <>
+                {' · '}
+                <Link href="/admin" className="underline hover:text-silver-300">
+                  Admin
+                </Link>
+              </>
+            )}
           </p>
         </footer>
       )}

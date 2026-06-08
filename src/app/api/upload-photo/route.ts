@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { resolveAppConfig } from '@/lib/core/app-config';
+import { requireApiAuth } from '@/lib/core/api-auth';
 import { docToPhoto, getFirebaseAdmin } from '@/lib/firebase-admin';
 
-function generatePhotoCode(): string {
+function generatePhotoCode(prefix: string): string {
   const timestamp = Date.now().toString(36).toUpperCase();
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `SILVER${timestamp}${random}`;
+  return `${prefix}${timestamp}${random}`;
 }
 
 function parseBool(value: FormDataEntryValue | null): boolean {
@@ -14,7 +16,13 @@ function parseBool(value: FormDataEntryValue | null): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = requireApiAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
+    const { branding } = resolveAppConfig();
+    const storagePrefix = branding.storagePathPrefix;
+
     const { db, bucket } = getFirebaseAdmin();
     const formData = await request.formData();
 
@@ -42,7 +50,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const photoCode = generatePhotoCode();
+    const photoCode = generatePhotoCode(branding.photoCodePrefix);
     const timestamp = Date.now();
     const photoId = `${sessionId}_${timestamp}`;
     const now = new Date();
@@ -52,7 +60,7 @@ export async function POST(request: NextRequest) {
       'base64'
     );
     const originalFile = bucket.file(
-      `sitecore-silver/${sessionId}/original_${timestamp}.jpg`
+      `${storagePrefix}/${sessionId}/original_${timestamp}.jpg`
     );
     await originalFile.save(originalBuffer, {
       contentType: 'image/jpeg',
@@ -65,7 +73,7 @@ export async function POST(request: NextRequest) {
       'base64'
     );
     const compositedFile = bucket.file(
-      `sitecore-silver/${sessionId}/composited_${timestamp}.jpg`
+      `${storagePrefix}/${sessionId}/composited_${timestamp}.jpg`
     );
     await compositedFile.save(compositedBuffer, {
       contentType: 'image/jpeg',

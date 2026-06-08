@@ -1,6 +1,8 @@
-# Getting Started - Sitecore Silver Photo Booth
+# Getting Started - AI Photo Booth
 
-Welcome to the Sitecore Silver Photo Booth project! This guide will walk you through setting up the project on your local machine.
+Welcome! This app runs as a **standalone event kiosk** or a **Sitecore Marketplace** app. This guide covers local setup for both modes.
+
+> **Sitecore Marketplace?** See [05_MARKETPLACE.md](./05_MARKETPLACE.md) for App Studio registration.
 
 ## Prerequisites
 
@@ -81,10 +83,29 @@ This will download and install:
 
 ### Gemini API Key
 
-The Gemini API key is already provided:
+Get from [Google AI Studio](https://aistudio.google.com/app/apikey):
 ```
 GOOGLE_GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 ```
+
+### Choose a deployment mode
+
+**Standalone kiosk (recommended for local dev):**
+```env
+NEXT_PUBLIC_STANDALONE_MODE=true
+```
+
+**Sitecore Silver event (Copenhagen 2026 branding):**
+```env
+APP_PRESET=sitecore-silver
+```
+
+**Secure APIs on public deploys:**
+```env
+API_SECRET=choose-a-long-random-string
+```
+
+See [05_MARKETPLACE.md](./05_MARKETPLACE.md) and [06_API_SECURITY.md](./06_API_SECURITY.md) for full details.
 
 ## Step 4: Start the Development Server
 

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import sharp from 'sharp';
-import { BRAND_ASSETS } from '@/lib/branding';
+import { resolveAppConfig } from '@/lib/core/app-config';
+import { requireApiAuth } from '@/lib/core/api-auth';
 import { sanitizePrompt } from '@/lib/prompt-sanitizer';
 import {
   generateTransformedImage,
@@ -17,16 +18,29 @@ function mimeTypeFromDataUrl(photo: string): string {
  * Process image with Gemini native image generation (@google/genai).
  * @see https://ai.google.dev/gemini-api/docs/image-generation
  */
+interface ProcessingContext {
+  watermarkText: string;
+  eventTagline: string;
+  logoPath: string;
+}
+
 async function processWithGemini(
   imageBase64: string,
   prompt: string,
   background: string,
-  mimeType: string
+  mimeType: string,
+  ctx: ProcessingContext
 ): Promise<string> {
   try {
     if (!process.env.GOOGLE_GEMINI_API_KEY) {
       console.warn('⚠️ Gemini API key not configured, using fallback enhancement');
-      return enhanceImageWithSharp(imageBase64, prompt, background);
+      return enhanceImageWithSharp(
+        imageBase64,
+        prompt,
+        background,
+        ctx.watermarkText,
+        ctx.eventTagline
+      );
     }
 
     const model = getGeminiImageModel();
@@ -43,7 +57,13 @@ async function processWithGemini(
 
     if (!base64Data) {
       console.warn('⚠️ [GEMINI] No image in response — falling back to Sharp');
-      return enhanceImageWithSharp(imageBase64, prompt, background);
+      return enhanceImageWithSharp(
+        imageBase64,
+        prompt,
+        background,
+        ctx.watermarkText,
+        ctx.eventTagline
+      );
     }
 
     console.log(
@@ -54,14 +74,26 @@ async function processWithGemini(
   } catch (error) {
     console.error('❌ [GEMINI] Error:', error);
     console.warn('⚠️ Falling back to Sharp enhancement');
-    return enhanceImageWithSharp(imageBase64, prompt, background);
+    return enhanceImageWithSharp(
+      imageBase64,
+      prompt,
+      background,
+      ctx.watermarkText,
+      ctx.eventTagline
+    );
   }
 }
 
 /**
  * Fallback: Apply theme-based image transformation with Sharp
  */
-async function enhanceImageWithSharp(imageBase64: string, prompt: string, background: string): Promise<string> {
+async function enhanceImageWithSharp(
+  imageBase64: string,
+  prompt: string,
+  background: string,
+  watermarkText: string,
+  eventTagline: string
+): Promise<string> {
   try {
     console.log('🎨 [SHARP] Starting fallback enhancement');
 
@@ -131,9 +163,9 @@ async function enhanceImageWithSharp(imageBase64: string, prompt: string, backgr
                 </linearGradient>
               </defs>
               <rect width="${width}" height="140" fill="url(#bgGrad)"/>
-              <text x="30" y="60" font-family="Arial,sans-serif" font-size="36" font-weight="bold" fill="white">SITECORE SILVER</text>
+              <text x="30" y="60" font-family="Arial,sans-serif" font-size="36" font-weight="bold" fill="white">${watermarkText}</text>
               <text x="30" y="90" font-family="Arial,sans-serif" font-size="14" fill="#C0C0C0">${promptText}</text>
-              <text x="30" y="120" font-family="Arial,sans-serif" font-size="12" fill="#A0A0A0">25 Years of Innovation • Copenhagen 2026</text>
+              <text x="30" y="120" font-family="Arial,sans-serif" font-size="12" fill="#A0A0A0">${eventTagline}</text>
             </svg>
           `),
           top: height - 140,
@@ -167,23 +199,26 @@ async function enhanceImageWithSharp(imageBase64: string, prompt: string, backgr
 }
 
 /**
- * Add Sitecore logo to image corner
+ * Add logo to image corner
  */
-async function addLogoToImage(imageBuffer: Buffer): Promise<Buffer> {
+async function addLogoToImage(
+  imageBuffer: Buffer,
+  logoPath: string
+): Promise<Buffer> {
   try {
     const metadata = await sharp(imageBuffer).metadata();
     const width = metadata.width || 1200;
     const height = metadata.height || 800;
 
-    const logoPath = path.join(
+    const resolvedLogo = path.join(
       process.cwd(),
       'public',
-      BRAND_ASSETS.logo.replace(/^\//, '')
+      logoPath.replace(/^\//, '')
     );
     const logoSize = Math.round(Math.min(width, height) * 0.14);
     const padding = Math.round(logoSize * 0.35);
 
-    const logo = await sharp(logoPath)
+    const logo = await sharp(resolvedLogo)
       .resize(logoSize, logoSize, { fit: 'inside', withoutEnlargement: true })
       .png()
       .toBuffer();
@@ -204,66 +239,20 @@ async function addLogoToImage(imageBuffer: Buffer): Promise<Buffer> {
   }
 }
 
-/**
- * Add Sitecore branding to enhanced image
- */
-async function addBranding(imageBuffer: Buffer, prompt: string): Promise<Buffer> {
-  try {
-    const metadata = await sharp(imageBuffer).metadata();
-    const width = metadata.width || 1200;
-    const height = metadata.height || 800;
-
-    const promptText = prompt.substring(0, 60);
-    const banner = await sharp({
-      create: {
-        width: width,
-        height: 140,
-        channels: 3,
-        background: { r: 0, g: 0, b: 0 },
-      },
-    })
-      .composite([
-        {
-          input: Buffer.from(`
-            <svg width="${width}" height="140" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style="stop-color:rgba(0,0,0,0.8);stop-opacity:1" />
-                  <stop offset="100%" style="stop-color:rgba(0,0,0,0.4);stop-opacity:1" />
-                </linearGradient>
-              </defs>
-              <rect width="${width}" height="140" fill="url(#bgGrad)"/>
-              <text x="30" y="60" font-family="Arial,sans-serif" font-size="36" font-weight="bold" fill="white">SITECORE SILVER</text>
-              <text x="30" y="90" font-family="Arial,sans-serif" font-size="14" fill="#C0C0C0">${promptText}</text>
-              <text x="30" y="120" font-family="Arial,sans-serif" font-size="12" fill="#A0A0A0">25 Years of Innovation • Copenhagen 2026</text>
-            </svg>
-          `),
-          top: height - 140,
-          left: 0,
-        },
-      ])
-      .png()
-      .toBuffer();
-
-    return await sharp(imageBuffer)
-      .composite([
-        {
-          input: banner,
-          top: height - 140,
-          left: 0,
-        },
-      ])
-      .jpeg({ quality: 95 })
-      .toBuffer();
-  } catch (error) {
-    console.warn('⚠️ Failed to add branding:', error);
-    return imageBuffer;
-  }
-}
-
 export async function POST(request: NextRequest) {
+  const auth = requireApiAuth(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     console.log('🔗 [API] /api/composit-image called');
+
+    const appConfig = resolveAppConfig();
+    const branding = appConfig.branding;
+    const ctx: ProcessingContext = {
+      watermarkText: branding.watermarkText,
+      eventTagline: `${branding.eventSubtitle}${branding.eventDate ? ` • ${branding.eventDate}` : ''}`,
+      logoPath: branding.logoPath,
+    };
 
     const body = await request.json();
     console.log('📥 [API] Body keys:', Object.keys(body));
@@ -305,13 +294,14 @@ export async function POST(request: NextRequest) {
       photoBase64,
       finalPrompt,
       backgroundDescription ?? '',
-      mimeType
+      mimeType,
+      ctx
     );
 
     // Convert base64 to buffer and add logo
-    console.log('🎨 [API] Adding Sitecore logo...');
+    console.log('🎨 [API] Adding logo overlay...');
     const imageBuffer = Buffer.from(compositedBase64, 'base64');
-    const imageWithLogo = await addLogoToImage(imageBuffer);
+    const imageWithLogo = await addLogoToImage(imageBuffer, ctx.logoPath);
     const finalBase64WithLogo = imageWithLogo.toString('base64');
 
     // Ensure base64 is properly formatted

@@ -1,8 +1,8 @@
-# Sitecore Silver Photo Booth 📸
+# AI Photo Booth 📸
 
-AI-powered photo booth for Sitecore's 25-year anniversary celebration in Copenhagen (June 11, 2026).
+AI-powered event photo booth — runs as a **Sitecore Marketplace** app or **standalone** kiosk.
 
-**Built with**: React 18 + Next.js 14 + TypeScript + Vercel + Google Gemini AI
+**Built with**: React 18 + Next.js 14 + TypeScript + Vercel + Google Gemini AI + Sitecore Marketplace SDK
 
 ---
 
@@ -24,25 +24,32 @@ All documentation is in the `docs/` folder. Start here:
 | **[docs/VERCEL_DEPLOY.md](docs/VERCEL_DEPLOY.md)** | 🚀 Deploy to Vercel |
 | **[docs/SECURITY.md](docs/SECURITY.md)** | 🔐 Security best practices |
 | **[docs/BRANDING_GUIDE.md](docs/BRANDING_GUIDE.md)** | 🎨 Design system & colors |
+| **[docs/05_MARKETPLACE.md](docs/05_MARKETPLACE.md)** | 🏪 Sitecore Marketplace setup |
+| **[docs/06_API_SECURITY.md](docs/06_API_SECURITY.md)** | 🔒 Secure API patterns |
 
 ---
 
 ## ⚡ Quick Start
 
+### Standalone (local kiosk)
+
 ```bash
-# 1. Install
 npm install
-
-# 2. Setup environment
 cp .env.example .env.local
-# Edit .env.local with your credentials
-
-# 3. Run
+# Add GOOGLE_GEMINI_API_KEY + Firebase Admin credentials
+# Optional: APP_PRESET=sitecore-silver for Copenhagen event branding
+echo "NEXT_PUBLIC_STANDALONE_MODE=true" >> .env.local
 npm run dev
-# Opens http://localhost:3000
 ```
 
-**Full setup:** See [docs/00_GETTING_STARTED.md](docs/00_GETTING_STARTED.md)
+### Sitecore Marketplace
+
+1. Register app in **App Studio** (extension point: **Standalone**).
+2. Set deployment URL to `http://localhost:3000`.
+3. Configure `.env.local` (see `.env.example`).
+4. `npm run dev` and open from Cloud Portal.
+
+**Full guides:** [docs/00_GETTING_STARTED.md](docs/00_GETTING_STARTED.md) · [docs/05_MARKETPLACE.md](docs/05_MARKETPLACE.md)
 
 ---
 
@@ -95,37 +102,39 @@ See [docs/VERCEL_DEPLOY.md](docs/VERCEL_DEPLOY.md) for full guide.
 
 ```
 src/
-├── app/          # Next.js pages & API routes
-├── components/   # React components
-├── lib/          # Utilities & hooks
-├── store/        # Zustand state
-├── types/        # TypeScript types
-└── styles/       # CSS & Tailwind
+├── app/                    # Pages + API routes (all actions via /api/*)
+├── components/
+│   ├── booth/              # Generic booth UI (works without Sitecore)
+│   ├── sitecore/           # Optional Sitecore marketing modules
+│   └── providers/          # Marketplace SDK + app config
+├── lib/
+│   ├── core/               # Config, API auth, API client
+│   └── sitecore/           # Authoring API, brand rules (optional)
+├── store/                  # Zustand session state
+└── data/                   # Default backgrounds & prompts
 
 docs/
-├── 00_GETTING_STARTED.md
-├── 01_ARCHITECTURE.md
-├── 02_FEATURES.md
-├── 03_DEVELOPMENT.md
-├── 04_TROUBLESHOOTING.md
-├── VERCEL_DEPLOY.md
-├── SECURITY.md
-└── BRANDING_GUIDE.md
+├── 05_MARKETPLACE.md       # Sitecore Marketplace setup
+├── 06_API_SECURITY.md      # Secure API guide
+└── … (see table above)
 ```
 
 ---
 
-## 🎯 Event Details
+## 🎯 Deployment modes
 
-- **Event**: Sitecore Silver Anniversary (25 Years)
-- **Location**: Tivoli, Copenhagen
-- **Date**: June 11, 2026
-- **Status**: ✅ Ready to deploy
+| Mode | Use case | Config |
+|------|----------|--------|
+| **Standalone** | Event kiosk, local dev | `NEXT_PUBLIC_STANDALONE_MODE=true` |
+| **Marketplace** | Sitecore Cloud Portal app | App Studio + deployment URL |
+| **Sitecore Silver** | Copenhagen 2026 event | `APP_PRESET=sitecore-silver` |
 
 ---
 
 ## 📞 Need Help?
 
+- **Marketplace?** → [docs/05_MARKETPLACE.md](docs/05_MARKETPLACE.md)
+- **API security?** → [docs/06_API_SECURITY.md](docs/06_API_SECURITY.md)
 - **Setup?** → [docs/00_GETTING_STARTED.md](docs/00_GETTING_STARTED.md)
 - **Architecture?** → [CLAUDE.md](./CLAUDE.md)
 - **Issues?** → [docs/04_TROUBLESHOOTING.md](docs/04_TROUBLESHOOTING.md)

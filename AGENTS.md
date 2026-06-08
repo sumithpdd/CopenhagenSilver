@@ -4,11 +4,12 @@ Guidance for AI agents (Cursor) working in this repository. Human docs live in `
 
 ## Project Overview
 
-**Sitecore Silver Photo Booth** — React/Next.js photo booth for Sitecore's 25-year anniversary (Copenhagen, June 11, 2026).
+**AI Photo Booth** — React/Next.js event photo booth. Runs as a **Sitecore Marketplace** app or **standalone** kiosk (same codebase).
 
 User flow: name → camera/upload → background → AI prompt → Gemini compositing → save/print/share → gallery.
 
-**Reference codebase**: `C:\code\flutter\photo_booth_ai` (feature parity and data models).
+**Marketplace reference**: `C:\code\sitecore\Scmarketplaceapps\ArticleSummaryGenerator\ai-article-summary-generator`
+**Flutter reference**: `C:\code\flutter\photo_booth_ai` (feature parity and data models).
 
 ## Documentation Map
 
@@ -22,6 +23,8 @@ User flow: name → camera/upload → background → AI prompt → Gemini compos
 | [docs/SECURITY.md](docs/SECURITY.md) | Secrets, env, git |
 | [docs/BRANDING_GUIDE.md](docs/BRANDING_GUIDE.md) | Silver theme, Tailwind |
 | [docs/VERCEL_DEPLOY.md](docs/VERCEL_DEPLOY.md) | Production deploy |
+| [docs/05_MARKETPLACE.md](docs/05_MARKETPLACE.md) | Sitecore Marketplace setup |
+| [docs/06_API_SECURITY.md](docs/06_API_SECURITY.md) | Secure API patterns |
 
 ## Tech Stack
 
@@ -29,6 +32,7 @@ User flow: name → camera/upload → background → AI prompt → Gemini compos
 - Zustand (session UI state) + TanStack Query (server data)
 - Firebase (Firestore, Storage, Admin on server)
 - Google Gemini 2.5 Flash (image compositing, **server-only**)
+- Sitecore Marketplace SDK (`@sitecore-marketplace-sdk/client`, `xmc`)
 - Tailwind CSS, React Hook Form + Zod
 
 ## Actual Routes (codebase)
@@ -50,20 +54,29 @@ API routes:
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| POST | `/api/composit-image` | Gemini compositing |
-| POST | `/api/upload-photo` | Firebase Storage + Firestore |
+| GET | `/api/config` | App branding + backgrounds/prompts |
+| GET | `/api/auth/session` | API session cookie (when `API_SECRET` set) |
+| POST | `/api/composit-image` | Gemini compositing (secured) |
+| POST | `/api/upload-photo` | Firebase Storage + Firestore (secured) |
 | GET | `/api/gallery` | List gallery photos |
+| GET | `/api/sitecore/status` | Sitecore CM credentials configured? |
 
 ## Folder Structure
 
 ```
 src/
-├── app/              # Pages + API routes
-├── components/       # photo-booth/, ui/, common/
-├── lib/              # firebase, validators, hooks, prompt-sanitizer
+├── app/              # Pages + API routes (all server actions via /api/*)
+├── components/
+│   ├── booth/        # Generic UI (BoothLogo, BoothBackdrop)
+│   ├── sitecore/     # Optional Sitecore modules (SitecoreAiFlow)
+│   ├── providers/    # MarketplaceProvider, AppConfigProvider
+│   ├── common/       # BoothLayout, GDPR
+│   └── photo-booth/  # PhotoPreviewModal
+├── lib/
+│   ├── core/         # app-config, api-auth, api-client, runtime-mode
+│   └── sitecore/     # authoring-api, brand-rules (optional)
 ├── store/            # photo-booth.ts (Zustand)
-├── types/            # index.ts
-├── data/             # backgrounds.ts, prompts.ts
+├── data/             # backgrounds.ts, prompts.ts (defaults)
 public/               # Static assets
 docs/                 # Human documentation
 .cursor/              # Cursor rules + slash commands
@@ -77,11 +90,20 @@ docs/                 # Human documentation
 - **TanStack Query**: gallery fetch, upload/composite mutations via API routes.
 - Never call Gemini or Firebase Admin from client components.
 
+### Runtime modes
+
+- **Standalone**: `NEXT_PUBLIC_STANDALONE_MODE=true` — skip Marketplace SDK.
+- **Marketplace**: embedded in Sitecore iframe — SDK auto-init, graceful fallback.
+- **Sitecore Silver preset**: `APP_PRESET=sitecore-silver` — Copenhagen event branding.
+
 ### API routes
 
 - Validate with Zod (`src/lib/validators.ts`).
 - Read secrets from `process.env` only (never hardcode).
 - Gemini key: `GOOGLE_GEMINI_API_KEY` (server-only).
+- Mutating routes: `requireApiAuth()` when `API_SECRET` is set.
+- Client calls: use `apiFetch` from `src/lib/core/api-client.ts`.
+- Config: `resolveAppConfig()` on server, `useAppConfig()` on client.
 
 ### Forms
 

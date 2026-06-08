@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePhotoBoothStore } from '@/store/photo-booth';
 import { useEffect, useRef, useState } from 'react';
+import { apiFetch } from '@/lib/core/api-client';
 
 export default function ProcessingPage() {
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function ProcessingPage() {
 
         // Step 1: Enhance image
         console.log('🎨 Step 1: Calling /api/composit-image...');
-        const enhanceResponse = await fetch('/api/composit-image', {
+        const enhanceResponse = await apiFetch('/api/composit-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -87,7 +88,7 @@ export default function ProcessingPage() {
         uploadFormData.append('consentTermsAccepted', String(consentTermsAccepted));
         uploadFormData.append('consentGalleryShare', String(consentGalleryShare));
 
-        const uploadResponse = await fetch('/api/upload-photo', {
+        const uploadResponse = await apiFetch('/api/upload-photo', {
           method: 'POST',
           body: uploadFormData,
         });
