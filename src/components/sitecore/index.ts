@@ -6,3 +6,4 @@
 export { SitecoreAiFlow } from '@/components/common/SitecoreAiFlow';
 export { SitecoreLogo } from '@/components/common/SitecoreLogo';
 export { CelebrationBackdrop } from '@/components/common/CelebrationBackdrop';
+export { SitecoreSiteInfoCard } from '@/components/sitecore/SitecoreSiteInfoCard';

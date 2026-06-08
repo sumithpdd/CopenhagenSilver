@@ -1,19 +1,43 @@
 import { z } from 'zod';
 
+const optionalUrl = z.union([
+  z.literal(''),
+  z.string().trim().url('Enter a valid URL'),
+]);
+
+const optionalText = (max: number) =>
+  z.union([z.literal(''), z.string().trim().max(max)]);
+
 // User Input Validation
 export const userInputSchema = z.object({
   userName: z
     .string()
     .trim()
     .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name must be less than 50 characters'),
+    .max(100, 'Name must be less than 100 characters'),
   userEmail: z.union([
     z.literal(''),
     z.string().trim().email('Invalid email address'),
   ]),
+  company: optionalText(120).optional(),
+  companyDescription: optionalText(500).optional(),
+  role: optionalText(120).optional(),
+  linkedInUrl: optionalUrl.optional(),
+  headline: optionalText(200).optional(),
 });
 
 export type UserInputFormData = z.infer<typeof userInputSchema>;
+
+export const attendeeProfileSchema = z.object({
+  fullName: z.string().trim().min(2).max(100),
+  company: z.string().trim().max(120).optional(),
+  companyDescription: z.string().trim().max(500).optional(),
+  role: z.string().trim().max(120).optional(),
+  linkedInUrl: z.string().trim().url().optional().or(z.literal('')),
+  headline: z.string().trim().max(200).optional(),
+});
+
+export type AttendeeProfileInput = z.infer<typeof attendeeProfileSchema>;
 
 // Photo Upload Validation
 export const photoUploadSchema = z.object({

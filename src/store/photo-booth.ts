@@ -1,10 +1,21 @@
 import { create } from 'zustand';
-import { PhotoBoothSession, Background, PhotoPrompt } from '@/types';
+import {
+  AttendeeProfile,
+  Background,
+  PhotoBoothSession,
+  PhotoPrompt,
+  SitecoreAttendeePageResult,
+} from '@/types';
 
 interface PhotoBoothState {
   // Session Info
   session: PhotoBoothSession | null;
-  initializeSession: (userName: string, userEmail?: string) => void;
+  attendeeProfile: AttendeeProfile | null;
+  initializeSession: (
+    userName: string,
+    userEmail?: string,
+    profile?: Omit<AttendeeProfile, 'fullName'>
+  ) => void;
   clearSession: () => void;
 
   // GDPR consent (required before booth flow)
@@ -36,8 +47,10 @@ interface PhotoBoothState {
   compositedPhotoUrl: string | null;
   photoId: string | null;
   photoCode: string | null;
+  sitecoreAttendeePage: SitecoreAttendeePageResult | null;
 
   setCompositedPhoto: (url: string, photoId?: string, photoCode?: string) => void;
+  setSitecoreAttendeePage: (page: SitecoreAttendeePageResult | null) => void;
   resetResult: () => void;
 
   // Overall reset
@@ -46,6 +59,7 @@ interface PhotoBoothState {
 
 const initialState = {
   session: null,
+  attendeeProfile: null,
   consentTermsAccepted: false,
   consentGalleryShare: false,
   capturedPhoto: null,
@@ -57,20 +71,32 @@ const initialState = {
   compositedPhotoUrl: null,
   photoId: null,
   photoCode: null,
+  sitecoreAttendeePage: null,
 };
 
 export const usePhotoBoothStore = create<PhotoBoothState>((set) => ({
   ...initialState,
 
-  initializeSession: (userName, userEmail) =>
+  initializeSession: (userName, userEmail, profile) => {
+    const clean = (v?: string) => v?.trim() || undefined;
+    const attendeeProfile: AttendeeProfile = {
+      fullName: userName.trim(),
+      company: clean(profile?.company),
+      companyDescription: clean(profile?.companyDescription),
+      role: clean(profile?.role),
+      linkedInUrl: clean(profile?.linkedInUrl),
+      headline: clean(profile?.headline),
+    };
     set({
       session: {
         sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        userName,
-        userEmail,
+        userName: userName.trim(),
+        userEmail: clean(userEmail),
         createdAt: new Date(),
       },
-    }),
+      attendeeProfile,
+    });
+  },
 
   clearSession: () => set({ session: null }),
 
@@ -103,11 +129,14 @@ export const usePhotoBoothStore = create<PhotoBoothState>((set) => ({
       processingError: null,
     }),
 
+  setSitecoreAttendeePage: (page) => set({ sitecoreAttendeePage: page }),
+
   resetResult: () =>
     set({
       compositedPhotoUrl: null,
       photoId: null,
       photoCode: null,
+      sitecoreAttendeePage: null,
       capturedPhoto: null,
       selectedBackground: null,
       selectedPrompt: null,

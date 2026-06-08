@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { resolveAppConfig } from '@/lib/core/app-config';
 import { requireApiAuth } from '@/lib/core/api-auth';
 import { docToPhoto, getFirebaseAdmin } from '@/lib/firebase-admin';
+import {
+  createOrUpdateAttendeePage,
+  isAttendeePageSyncConfigured,
+} from '@/lib/sitecore/attendee-profile';
+import type { AttendeeProfile } from '@/types';
 
 function generatePhotoCode(prefix: string): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -13,6 +18,23 @@ function parseBool(value: FormDataEntryValue | null): boolean {
   if (value === null || value === '') return false;
   const s = String(value).toLowerCase();
   return s === 'true' || s === '1' || s === 'yes';
+}
+
+function parseOptionalString(value: FormDataEntryValue | null): string | undefined {
+  if (value === null) return undefined;
+  const s = String(value).trim();
+  return s || undefined;
+}
+
+function parseAttendeeProfile(formData: FormData, userName: string): AttendeeProfile {
+  return {
+    fullName: parseOptionalString(formData.get('fullName')) ?? userName,
+    company: parseOptionalString(formData.get('company')),
+    companyDescription: parseOptionalString(formData.get('companyDescription')),
+    role: parseOptionalString(formData.get('role')),
+    linkedInUrl: parseOptionalString(formData.get('linkedInUrl')),
+    headline: parseOptionalString(formData.get('headline')),
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -106,6 +128,31 @@ export async function POST(request: NextRequest) {
 
     await db.collection('photobooth').doc(photoId).set(photoDoc);
 
+    let sitecoreAttendeePage = null;
+    const syncToSitecore =
+      parseBool(formData.get('syncToSitecore')) ||
+      resolveAppConfig().features.sitecoreAttendeePages;
+
+    if (syncToSitecore && isAttendeePageSyncConfigured()) {
+      try {
+        const profile = parseAttendeeProfile(formData, userName);
+        sitecoreAttendeePage = await createOrUpdateAttendeePage({
+          profile,
+          photoCode,
+          originalPhotoUrl,
+          enhancedPhotoUrl: compositedPhotoUrl,
+        });
+        console.log(
+          '✅ [SITECORE] Attendee page',
+          sitecoreAttendeePage.created ? 'created' : 'updated',
+          sitecoreAttendeePage.path
+        );
+      } catch (sitecoreError) {
+        console.error('⚠️ [SITECORE] Attendee page sync failed:', sitecoreError);
+        // Photo upload still succeeds — Sitecore sync is best-effort
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -116,6 +163,7 @@ export async function POST(request: NextRequest) {
         visibility,
         consentGalleryShare,
         photo: docToPhoto(photoId, photoDoc),
+        sitecoreAttendeePage,
       },
     });
   } catch (error) {

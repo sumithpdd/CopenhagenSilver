@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { userInputSchema, type UserInputFormData } from '@/lib/validators';
 import { usePhotoBoothStore } from '@/store/photo-booth';
 import { BoothLayout } from '@/components/common/BoothLayout';
+import { useAppConfig } from '@/components/providers/app-config-provider';
 import { GdprConsentBlock } from '@/components/common/GdprConsentBlock';
 import { FormField } from '@/components/ui/FormField';
 import { IconArrowRight, IconMail, IconSparkles, IconUser } from '@/components/icons/BoothIcons';
@@ -15,6 +16,7 @@ import Link from 'next/link';
 
 export default function InputPage() {
   const router = useRouter();
+  const { features } = useAppConfig();
   const initializeSession = usePhotoBoothStore((state) => state.initializeSession);
   const setConsent = usePhotoBoothStore((state) => state.setConsent);
   const consentTermsAccepted = usePhotoBoothStore((state) => state.consentTermsAccepted);
@@ -39,7 +41,13 @@ export default function InputPage() {
     }
     setConsentError(null);
     setConsent(termsAccepted, galleryShare);
-    initializeSession(data.userName, data.userEmail);
+    initializeSession(data.userName, data.userEmail, {
+      company: data.company,
+      companyDescription: data.companyDescription,
+      role: data.role,
+      linkedInUrl: data.linkedInUrl,
+      headline: data.headline,
+    });
     router.push('/camera');
   };
 
@@ -62,10 +70,10 @@ export default function InputPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="booth-form-card space-y-6">
               <FormField
                 {...register('userName')}
-                label="What's your name? *"
+                label="Full name *"
                 icon={<IconUser size={20} />}
                 type="text"
-                placeholder="Enter your name"
+                placeholder="e.g. Sumith Damodaran"
                 autoFocus
                 error={errors.userName?.message}
               />
@@ -79,6 +87,50 @@ export default function InputPage() {
                 error={errors.userEmail?.message}
                 hint="For sharing or printing your keepsake"
               />
+
+              {features.sitecoreAttendeePages && (
+                <div className="space-y-4 border-t border-white/10 pt-6">
+                  <p className="text-sm font-semibold text-white">
+                    Professional profile
+                    <span className="text-sc-muted font-normal"> (optional — published to Sitecore)</span>
+                  </p>
+                  <FormField
+                    {...register('company')}
+                    label="Company"
+                    type="text"
+                    placeholder="Your company"
+                    error={errors.company?.message}
+                  />
+                  <FormField
+                    {...register('role')}
+                    label="Role"
+                    type="text"
+                    placeholder="e.g. Solution Architect"
+                    error={errors.role?.message}
+                  />
+                  <FormField
+                    {...register('headline')}
+                    label="Headline"
+                    type="text"
+                    placeholder="LinkedIn headline"
+                    error={errors.headline?.message}
+                  />
+                  <FormField
+                    {...register('linkedInUrl')}
+                    label="LinkedIn URL"
+                    type="url"
+                    placeholder="https://www.linkedin.com/in/..."
+                    error={errors.linkedInUrl?.message}
+                  />
+                  <FormField
+                    {...register('companyDescription')}
+                    label="Company description"
+                    type="text"
+                    placeholder="Brief description of your company"
+                    error={errors.companyDescription?.message}
+                  />
+                </div>
+              )}
 
               <div className="border-t border-white/10 pt-6">
                 <GdprConsentBlock

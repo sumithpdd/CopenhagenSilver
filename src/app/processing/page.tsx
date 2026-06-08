@@ -15,6 +15,8 @@ export default function ProcessingPage() {
   const setCompositedPhoto = usePhotoBoothStore((state) => state.setCompositedPhoto);
   const consentTermsAccepted = usePhotoBoothStore((state) => state.consentTermsAccepted);
   const consentGalleryShare = usePhotoBoothStore((state) => state.consentGalleryShare);
+  const attendeeProfile = usePhotoBoothStore((state) => state.attendeeProfile);
+  const setSitecoreAttendeePage = usePhotoBoothStore((state) => state.setSitecoreAttendeePage);
 
   const [error, setError] = useState<string | null>(null);
   const processingStarted = useRef(false);
@@ -87,6 +89,26 @@ export default function ProcessingPage() {
         uploadFormData.append('promptId', selectedPrompt.id);
         uploadFormData.append('consentTermsAccepted', String(consentTermsAccepted));
         uploadFormData.append('consentGalleryShare', String(consentGalleryShare));
+        uploadFormData.append('syncToSitecore', 'true');
+
+        if (attendeeProfile) {
+          uploadFormData.append('fullName', attendeeProfile.fullName);
+          if (attendeeProfile.company) {
+            uploadFormData.append('company', attendeeProfile.company);
+          }
+          if (attendeeProfile.companyDescription) {
+            uploadFormData.append('companyDescription', attendeeProfile.companyDescription);
+          }
+          if (attendeeProfile.role) {
+            uploadFormData.append('role', attendeeProfile.role);
+          }
+          if (attendeeProfile.linkedInUrl) {
+            uploadFormData.append('linkedInUrl', attendeeProfile.linkedInUrl);
+          }
+          if (attendeeProfile.headline) {
+            uploadFormData.append('headline', attendeeProfile.headline);
+          }
+        }
 
         const uploadResponse = await apiFetch('/api/upload-photo', {
           method: 'POST',
@@ -108,6 +130,9 @@ export default function ProcessingPage() {
               uploadResult.data.photoId,
               uploadResult.data.photoCode
             );
+            if (uploadResult.data.sitecoreAttendeePage) {
+              setSitecoreAttendeePage(uploadResult.data.sitecoreAttendeePage);
+            }
           }
         }
 
@@ -151,6 +176,8 @@ export default function ProcessingPage() {
     session,
     consentTermsAccepted,
     consentGalleryShare,
+    attendeeProfile,
+    setSitecoreAttendeePage,
   ]);
 
   if (!session || !capturedPhoto || !selectedBackground || !selectedPrompt)

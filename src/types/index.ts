@@ -10,6 +10,24 @@ export interface PhotoBoothSession {
   createdAt: Date;
 }
 
+/** Maps to SitecoreSilverAttendeeProfile template fields in XM Cloud. */
+export interface AttendeeProfile {
+  fullName: string;
+  company?: string;
+  companyDescription?: string;
+  role?: string;
+  linkedInUrl?: string;
+  headline?: string;
+}
+
+export interface SitecoreAttendeePageResult {
+  itemId: string;
+  path: string;
+  name: string;
+  aiQuote: string;
+  created: boolean;
+}
+
 // Photo Models
 export interface Background {
   id: string;

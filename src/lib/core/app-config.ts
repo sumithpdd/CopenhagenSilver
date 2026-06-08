@@ -29,6 +29,8 @@ export interface FeatureFlags {
   admin: boolean;
   sitecoreMarketing: boolean;
   summaryPage: boolean;
+  /** Show attendee profile fields and sync to Sitecore CM on upload. */
+  sitecoreAttendeePages: boolean;
 }
 
 export interface BrandRulesConfig {
@@ -85,6 +87,10 @@ export function getDefaultAppConfig(): AppConfig {
         sitecoreBrandRules
       ),
       summaryPage: parseBoolEnv(process.env.NEXT_PUBLIC_ENABLE_SUMMARY, true),
+      sitecoreAttendeePages: parseBoolEnv(
+        process.env.NEXT_PUBLIC_ENABLE_SITECORE_ATTENDEE_PAGES,
+        process.env.APP_PRESET === 'sitecore-silver'
+      ),
     },
     brandRules: {
       enabled: sitecoreBrandRules,
@@ -121,6 +127,7 @@ export function getSitecoreSilverPreset(): Partial<AppConfig> {
       admin: true,
       sitecoreMarketing: true,
       summaryPage: true,
+      sitecoreAttendeePages: true,
     },
     brandRules: {
       enabled: true,

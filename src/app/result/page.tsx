@@ -13,6 +13,7 @@ export default function ResultPage() {
   const capturedPhoto = usePhotoBoothStore((state) => state.capturedPhoto);
   const compositedPhotoUrl = usePhotoBoothStore((state) => state.compositedPhotoUrl);
   const storedPhotoCode = usePhotoBoothStore((state) => state.photoCode);
+  const sitecoreAttendeePage = usePhotoBoothStore((state) => state.sitecoreAttendeePage);
   const selectedBackground = usePhotoBoothStore((state) => state.selectedBackground);
   const selectedPrompt = usePhotoBoothStore((state) => state.selectedPrompt);
   const resetSession = usePhotoBoothStore((state) => state.resetSession);
@@ -127,6 +128,22 @@ export default function ResultPage() {
 
           {actionError && (
             <p className="text-red-400 text-sm text-center">{actionError}</p>
+          )}
+
+          {sitecoreAttendeePage && (
+            <div className="brand-card p-6 space-y-2 text-sm">
+              <p className="text-silver-400 font-semibold uppercase tracking-wide">
+                Published to Sitecore
+              </p>
+              <p className="font-mono text-xs text-silver-300 break-all">
+                {sitecoreAttendeePage.path}
+              </p>
+              {sitecoreAttendeePage.aiQuote && (
+                <p className="text-silver-200 italic leading-relaxed">
+                  &ldquo;{sitecoreAttendeePage.aiQuote}&rdquo;
+                </p>
+              )}
+            </div>
           )}
 
           <div className="grid grid-cols-2 gap-4 brand-card p-6 text-sm">

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { BoothLayout } from '@/components/common/BoothLayout';
 import { useAppConfig } from '@/components/providers/app-config-provider';
-import { SitecoreAiFlow } from '@/components/sitecore';
+import { SitecoreAiFlow, SitecoreSiteInfoCard } from '@/components/sitecore';
 import {
   IconArrowRight,
   IconCalendar,
@@ -70,6 +70,8 @@ export default function Home() {
             </Link>
             )}
           </div>
+
+          <SitecoreSiteInfoCard />
 
           {features.sitecoreMarketing && <SitecoreAiFlow />}
 
