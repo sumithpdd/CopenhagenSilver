@@ -29,7 +29,6 @@ interface ItemWithChildrenResponse {
   path: string;
   displayName?: string;
   children?: {
-    total?: number;
     nodes?: Array<{ itemId: string; name: string; path: string }>;
   };
 }
@@ -48,7 +47,6 @@ query SiteInfo($sitePath: String!, $attendeesPath: String!, $language: String!) 
     path
     displayName
     children {
-      total
       nodes {
         itemId
         name
@@ -92,12 +90,8 @@ export async function getSitecoreSiteInfo(
     const siteItem = result.data?.site;
     const attendeesItem = result.data?.attendees;
 
-    const totalFromApi = attendeesItem?.children?.total;
     const nodeCount = attendeesItem?.children?.nodes?.length ?? 0;
-    const totalItems =
-      typeof totalFromApi === 'number' && totalFromApi >= 0
-        ? totalFromApi
-        : nodeCount;
+    const totalItems = nodeCount;
 
     return {
       configured: true,
