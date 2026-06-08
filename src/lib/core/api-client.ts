@@ -1,13 +1,14 @@
 /**
- * Client-side API helper — attaches session cookie automatically (same-origin).
- * Fetches /api/auth/session on first mutating call when API_SECRET is configured.
+ * Client-side API helper — attaches session auth automatically.
+ * Uses in-memory bearer token (iframe-safe) with cookie fallback.
  */
 
-let sessionInitialized = false;
+let sessionToken: string | null = null;
 let sessionInitPromise: Promise<void> | null = null;
 
 async function ensureApiSession(): Promise<void> {
-  if (sessionInitialized) return;
+  if (sessionToken) return;
+
   if (!sessionInitPromise) {
     sessionInitPromise = fetch('/api/auth/session', { credentials: 'include' })
       .then(async (res) => {
@@ -17,13 +18,24 @@ async function ensureApiSession(): Promise<void> {
             (body as { error?: string }).error ?? 'Failed to obtain API session'
           );
         }
-        sessionInitialized = true;
+        const body = (await res.json()) as {
+          success?: boolean;
+          data?: { secured?: boolean; sessionToken?: string };
+        };
+        if (body.data?.sessionToken) {
+          sessionToken = body.data.sessionToken;
+        }
       })
       .finally(() => {
         sessionInitPromise = null;
       });
   }
   await sessionInitPromise;
+}
+
+function authHeaders(): Record<string, string> {
+  if (!sessionToken) return {};
+  return { Authorization: `Bearer ${sessionToken}` };
 }
 
 export async function apiFetch(
@@ -35,11 +47,17 @@ export async function apiFetch(
     await ensureApiSession();
   }
 
+  const incoming =
+    init.headers instanceof Headers
+      ? Object.fromEntries(init.headers.entries())
+      : (init.headers as Record<string, string> | undefined) ?? {};
+
   return fetch(url, {
     ...init,
     credentials: 'include',
     headers: {
-      ...(init.headers ?? {}),
+      ...authHeaders(),
+      ...incoming,
     },
   });
 }
@@ -63,4 +81,12 @@ export async function apiPostJson<T = unknown>(
 
 export async function apiPostFormData(url: string, formData: FormData): Promise<Response> {
   return apiFetch(url, { method: 'POST', body: formData });
+}
+
+/** Bootstrap session on app load (before first mutating API call). */
+export function bootstrapApiSession(): void {
+  void ensureApiSession().catch(() => {
+    // Retry on first mutating call
+    sessionToken = null;
+  });
 }

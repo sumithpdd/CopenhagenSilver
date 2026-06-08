@@ -22,13 +22,19 @@ export async function GET(request: NextRequest) {
   const token = createSessionToken(secret);
   const response = NextResponse.json({
     success: true,
-    data: { secured: true, expiresInHours: 4 },
+    data: {
+      secured: true,
+      expiresInHours: 4,
+      // Also return token for iframe contexts where third-party cookies are blocked
+      sessionToken: token,
+    },
   });
 
   response.cookies.set(BOOTH_SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    // lax/none: Marketplace iframe is cross-site — strict blocks the cookie on POST
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     path: '/',
     maxAge: 60 * 60 * 4,
   });

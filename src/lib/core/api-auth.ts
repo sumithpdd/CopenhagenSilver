@@ -64,6 +64,11 @@ export type ApiAuthResult =
   | { authorized: true }
   | { authorized: false; response: NextResponse };
 
+/** Verify session token string (cookie value or Authorization bearer). */
+export function isValidSessionToken(token: string, secret: string): boolean {
+  return verifySessionToken(token, secret);
+}
+
 /**
  * Guard mutating API routes. Returns unauthorized response when check fails.
  * Call at the top of POST/PATCH/DELETE handlers.
@@ -77,8 +82,14 @@ export function requireApiAuth(request: NextRequest): ApiAuthResult {
   }
 
   const bearer = extractToken(request);
-  if (bearer && safeEqual(bearer, secret)) {
-    return { authorized: true };
+  if (bearer) {
+    if (safeEqual(bearer, secret)) {
+      return { authorized: true };
+    }
+    // Signed session token (works when third-party cookies are blocked in iframes)
+    if (verifySessionToken(bearer, secret)) {
+      return { authorized: true };
+    }
   }
 
   const session = request.cookies.get(BOOTH_SESSION_COOKIE)?.value;

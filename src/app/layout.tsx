@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { AppConfigProvider } from '@/components/providers/app-config-provider';
+import { ApiSessionBootstrap } from '@/components/providers/api-session-bootstrap';
 import { MarketplaceProvider } from '@/components/providers/marketplace';
 import './globals.css';
 
@@ -37,6 +38,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-sc-bg text-sc-text antialiased font-sitecore min-h-screen">
         <MarketplaceProvider>
+          <ApiSessionBootstrap />
           <AppConfigProvider>{children}</AppConfigProvider>
         </MarketplaceProvider>
       </body>
