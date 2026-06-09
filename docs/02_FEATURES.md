@@ -378,6 +378,34 @@ Custom: [Text input field]
 GET /api/gallery?search=john&category=heritage&page=1&limit=20
 ```
 
+## Feature 9: Admin (staff moderation)
+
+**File:** `src/app/admin/page.tsx`
+
+**URL:** `/admin` (local: `http://localhost:3000/admin`; production: `https://your-deploy-url/admin`)
+
+**What it does:**
+- Password gate for event staff (`ADMIN_SECRET`)
+- Lists photos from Firestore (`photobooth` collection)
+- Filter by visibility (all / public / hidden)
+- Hide, show, or delete photos from the community gallery
+
+**Configuration:**
+```env
+NEXT_PUBLIC_ENABLE_ADMIN=true
+ADMIN_SECRET=choose-a-strong-password-for-event-staff
+```
+
+Without `ADMIN_SECRET`, the login API returns 503 and the page cannot authenticate.
+
+**Footer link:** When `NEXT_PUBLIC_ENABLE_ADMIN=true`, booth pages show an **Admin** link in the footer.
+
+**API:**
+- `POST /api/admin/login` — body `{ "password": "<ADMIN_SECRET>" }`
+- `GET /api/admin/photos` — list (requires admin cookie)
+- `PATCH /api/admin/photos/[id]` — update visibility / moderation
+- `DELETE /api/admin/photos/[id]` — remove photo and Storage files
+
 ## API Endpoints Reference
 
 ### 1. Composit Image (AI Processing)

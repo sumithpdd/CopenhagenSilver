@@ -8,6 +8,9 @@ import {
 } from '@/lib/sitecore/attendee-profile';
 import type { AttendeeProfile } from '@/types';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 function generatePhotoCode(prefix: string): string {
   const timestamp = Date.now().toString(36).toUpperCase();
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();

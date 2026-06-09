@@ -3,8 +3,10 @@
  */
 
 import {
+  DISALLOWED_YEAR_PATTERN,
   LOGO_MANIPULATION_PATTERNS,
   OFF_THEME_LOCATION_PATTERNS,
+  SITECORE_EVENT_YEAR,
   SITECORE_IMAGE_BRAND_RULES,
 } from '@/lib/sitecore-brand';
 
@@ -27,6 +29,23 @@ const BLOCKED_KEYWORDS = [
   'drunk', 'alcohol',
   'disturbing', 'horror', 'scary', 'creepy', 'inappropriate', 'offensive',
 ];
+
+/** Block logo-change requests, not guardrails like "do not change the logo". */
+function containsLogoManipulationIntent(prompt: string): boolean {
+  for (const pattern of LOGO_MANIPULATION_PATTERNS) {
+    const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`;
+    const re = new RegExp(pattern.source, flags);
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(prompt)) !== null) {
+      const prefix = prompt.slice(Math.max(0, match.index - 24), match.index);
+      if (/\b(do not|don't|never|without|not)\s*$/i.test(prefix)) {
+        continue;
+      }
+      return true;
+    }
+  }
+  return false;
+}
 
 const INJECTION_PATTERNS = [
   /ignore\s+(previous|above|all)\s+(instructions|prompts)/i,
@@ -73,13 +92,11 @@ export function sanitizePrompt(
     }
   }
 
-  for (const pattern of LOGO_MANIPULATION_PATTERNS) {
-    if (pattern.test(prompt)) {
-      return {
-        isValid: false,
-        reason: 'Prompt cannot modify or replace the official Sitecore logo',
-      };
-    }
+  if (containsLogoManipulationIntent(prompt)) {
+    return {
+      isValid: false,
+      reason: 'Prompt cannot modify or replace the official Sitecore logo',
+    };
   }
 
   for (const pattern of OFF_THEME_LOCATION_PATTERNS) {
@@ -89,6 +106,14 @@ export function sanitizePrompt(
         reason: 'Keep themes in Copenhagen, Denmark for the Silver Celebration',
       };
     }
+  }
+
+  const disallowedYears = [...prompt.matchAll(DISALLOWED_YEAR_PATTERN)].map((m) => m[0]);
+  if (disallowedYears.length > 0) {
+    return {
+      isValid: false,
+      reason: `Use only ${SITECORE_EVENT_YEAR} for calendar years in prompts (found: ${disallowedYears.join(', ')})`,
+    };
   }
 
   let sanitizedPrompt = prompt
@@ -117,8 +142,8 @@ export function isPromptSafe(prompt: string): boolean {
 
 export function getSafeDefaultPrompt(backgroundDescription?: string): string {
   return buildGeminiUserPrompt(
-    `Sitecore Silver 25-year anniversary portrait in Copenhagen, Denmark — celebration at Tivoli${
+    `Sitecore Silver 25-year anniversary portrait in Copenhagen, Denmark (${SITECORE_EVENT_YEAR}) — celebration at Tivoli${
       backgroundDescription ? `, ${backgroundDescription}` : ''
-    }. Elegant Nordic silver event lighting. Do not change the Sitecore logo. Maintain a natural, recognizable likeness.`
+    }. Elegant Nordic silver event lighting. Preserve the Sitecore logo exactly as in the source photo. No calendar years other than ${SITECORE_EVENT_YEAR}. Maintain a natural, recognizable likeness.`
   );
 }

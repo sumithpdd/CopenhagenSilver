@@ -21,9 +21,15 @@ export const SITECORE_OFFICIAL = {
 export const SITECOREAI_BRAND_NOTE =
   'When referring to the platform, write SitecoreAI as one word (e.g. SitecoreAI CMS, SitecoreAI Agentic RAG, SitecoreAI Data Platform).';
 
+export const SITECORE_EVENT_YEAR = 2026;
+
+export const SITECORE_EVENT_YEAR_RULE =
+  `Event year is ${SITECORE_EVENT_YEAR} only. Do not display, write, or imply any other calendar year in text, signage, badges, or graphics (no 2024, 2025, 2027, etc.). "25 years" anniversary messaging is fine without showing other years.`;
+
 export const SITECORE_LOGO_PROMPT =
-  'CRITICAL — DO NOT CHANGE THE SITECORE LOGO: Use only the official Sitecore Silver logo (polished chrome circular emblem with three curved inner segments above "SITECORE" in metallic silver). ' +
-  'Never redraw, replace, distort, recolor, animate, or substitute a different logo. Never remove the logo if it is present in the composition.';
+  'CRITICAL — DO NOT CHANGE THE SITECORE LOGO: Never redraw, replace, distort, recolor, animate, embellish, or be creative with the Sitecore logo or any brand wordmarks. ' +
+  'Do not add new logos, fake logos, stylized logo variants, or competitor marks. If a Sitecore logo appears in the source photo, preserve it exactly as-is. ' +
+  'Official logo overlay is applied after generation — do not invent or modify logo artwork in the output.';
 
 export const SITECORE_LOCATION_PROMPT =
   'Location & theme: All scenes, backgrounds, architecture, and mood must stay anchored in Copenhagen, Denmark — Sitecore Silver 25-year anniversary celebration. ' +
@@ -35,6 +41,7 @@ export const SITECORE_BACKDROP_PROMPT =
 
 export const SITECORE_IMAGE_BRAND_RULES = [
   SITECORE_LOGO_PROMPT,
+  SITECORE_EVENT_YEAR_RULE,
   SITECORE_LOCATION_PROMPT,
   SITECORE_BACKDROP_PROMPT,
   SITECOREAI_BRAND_NOTE,
@@ -54,7 +61,12 @@ export const LOGO_MANIPULATION_PATTERNS = [
   /remove\s+(the\s+)?sitecore\s+logo/i,
   /non[- ]?sitecore\s+brand/i,
   /redesign\s+(the\s+)?logo/i,
+  /add\s+(a\s+)?(fake|custom|new)\s+logo/i,
+  /create\s+(a\s+)?(fake|custom|new)\s+logo/i,
 ];
+
+/** Calendar years other than the 2026 event year (4-digit). */
+export const DISALLOWED_YEAR_PATTERN = /\b(19\d{2}|20(0\d|1\d|2[0-5]|27|28|29|3\d))\b/g;
 
 /** Block prompts that pull the scene away from Copenhagen / celebration */
 export const OFF_THEME_LOCATION_PATTERNS = [

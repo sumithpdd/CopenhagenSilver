@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:https": "next dev --experimental-https",
+    "dev:marketplace": "next dev --experimental-https -p 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

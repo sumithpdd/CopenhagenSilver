@@ -5,32 +5,79 @@
 
 let sessionToken: string | null = null;
 let sessionInitPromise: Promise<void> | null = null;
+let apiSecured: boolean | null = null;
 
-async function ensureApiSession(): Promise<void> {
-  if (sessionToken) return;
+function isSessionTokenFresh(token: string): boolean {
+  const expiresStr = token.split('.')[0];
+  const expires = Number(expiresStr);
+  if (!Number.isFinite(expires)) return false;
+  // 30s skew buffer
+  return Date.now() < expires - 30_000;
+}
+
+function resetSessionState(): void {
+  sessionToken = null;
+  apiSecured = null;
+  sessionInitPromise = null;
+}
+
+async function fetchApiSession(): Promise<void> {
+  const res = await fetch(`/api/auth/session?_=${Date.now()}`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(
+      (body as { error?: string }).error ?? 'Failed to obtain API session'
+    );
+  }
+
+  const body = (await res.json()) as {
+    success?: boolean;
+    data?: { secured?: boolean; sessionToken?: string };
+  };
+
+  apiSecured = body.data?.secured ?? false;
+
+  if (body.data?.secured && !body.data.sessionToken) {
+    throw new Error('API session response missing token');
+  }
+
+  if (body.data?.sessionToken) {
+    if (!isSessionTokenFresh(body.data.sessionToken)) {
+      throw new Error('API session token expired — retry');
+    }
+    sessionToken = body.data.sessionToken;
+  } else if (!body.data?.secured) {
+    sessionToken = null;
+  }
+}
+
+async function ensureApiSession(options?: { force?: boolean }): Promise<void> {
+  const force = options?.force ?? false;
+
+  if (!force && sessionToken && isSessionTokenFresh(sessionToken)) {
+    return;
+  }
+
+  if (force) {
+    sessionInitPromise = null;
+  }
 
   if (!sessionInitPromise) {
-    sessionInitPromise = fetch('/api/auth/session', { credentials: 'include' })
-      .then(async (res) => {
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(
-            (body as { error?: string }).error ?? 'Failed to obtain API session'
-          );
-        }
-        const body = (await res.json()) as {
-          success?: boolean;
-          data?: { secured?: boolean; sessionToken?: string };
-        };
-        if (body.data?.sessionToken) {
-          sessionToken = body.data.sessionToken;
-        }
-      })
-      .finally(() => {
-        sessionInitPromise = null;
-      });
+    sessionInitPromise = fetchApiSession().finally(() => {
+      sessionInitPromise = null;
+    });
   }
+
   await sessionInitPromise;
+
+  if (apiSecured && !sessionToken) {
+    throw new Error('Could not obtain API session token');
+  }
 }
 
 function authHeaders(): Record<string, string> {
@@ -38,12 +85,18 @@ function authHeaders(): Record<string, string> {
   return { Authorization: `Bearer ${sessionToken}` };
 }
 
+function isMutatingMethod(method: string): boolean {
+  return method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS';
+}
+
 export async function apiFetch(
   url: string,
   init: RequestInit = {}
 ): Promise<Response> {
   const method = (init.method ?? 'GET').toUpperCase();
-  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+  const mutating = isMutatingMethod(method);
+
+  if (mutating) {
     await ensureApiSession();
   }
 
@@ -52,14 +105,27 @@ export async function apiFetch(
       ? Object.fromEntries(init.headers.entries())
       : (init.headers as Record<string, string> | undefined) ?? {};
 
-  return fetch(url, {
-    ...init,
-    credentials: 'include',
-    headers: {
-      ...authHeaders(),
-      ...incoming,
-    },
-  });
+  const performFetch = () =>
+    fetch(url, {
+      ...init,
+      credentials: 'include',
+      cache: 'no-store',
+      headers: {
+        ...incoming,
+        ...authHeaders(),
+      },
+    });
+
+  const response = await performFetch();
+
+  // Stale cached session or expired token — refresh once and retry
+  if (mutating && response.status === 401) {
+    resetSessionState();
+    await ensureApiSession({ force: true });
+    return performFetch();
+  }
+
+  return response;
 }
 
 export async function apiPostJson<T = unknown>(
@@ -86,7 +152,6 @@ export async function apiPostFormData(url: string, formData: FormData): Promise<
 /** Bootstrap session on app load (before first mutating API call). */
 export function bootstrapApiSession(): void {
   void ensureApiSession().catch(() => {
-    // Retry on first mutating call
-    sessionToken = null;
+    resetSessionState();
   });
 }

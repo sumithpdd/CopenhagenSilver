@@ -52,6 +52,19 @@ When `API_SECRET` is **not** set (event kiosk / local dev), mutating routes are 
 
 ---
 
+## Admin access
+
+**Page:** `/admin` (e.g. `https://your-app.vercel.app/admin`)
+
+| Variable | Purpose |
+|----------|---------|
+| `ADMIN_SECRET` | Staff password; also stored in httpOnly cookie after login |
+| `NEXT_PUBLIC_ENABLE_ADMIN=true` | Shows Admin footer link on booth pages |
+
+Login: `POST /api/admin/login` with `{ "password": "<ADMIN_SECRET>" }`. Session cookie lasts 8 hours.
+
+---
+
 ## Marketplace iframe trust model
 
 When embedded in Sitecore Marketplace:

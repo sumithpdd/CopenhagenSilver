@@ -591,6 +591,188 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
+/* Prompt selection page */
+.prompt-panel {
+  border-radius: 1rem;
+  border: 1px solid var(--sc-border);
+  background: linear-gradient(
+    165deg,
+    rgba(28, 28, 28, 0.92) 0%,
+    rgba(10, 10, 10, 0.88) 100%
+  );
+  backdrop-filter: blur(12px);
+  padding: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .prompt-panel {
+    padding: 1.5rem;
+  }
+}
+
+.prompt-panel__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-accent-muted);
+  margin-bottom: 1rem;
+}
+
+.prompt-category-pill {
+  padding: 0.5rem 1.125rem;
+  border-radius: var(--sc-radius-pill);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid var(--sc-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--sc-text-muted);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.prompt-category-pill:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  color: var(--sc-text);
+}
+
+.prompt-category-pill--active {
+  background: var(--color-silver-primary);
+  border-color: var(--color-silver-primary);
+  color: #1a1a1a;
+  box-shadow: 0 4px 20px rgba(232, 232, 232, 0.15);
+}
+
+.prompt-card {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--sc-border);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+}
+
+.prompt-card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.prompt-card--selected {
+  border-color: rgba(235, 0, 26, 0.55);
+  background: rgba(235, 0, 26, 0.08);
+  box-shadow: 0 0 0 1px rgba(235, 0, 26, 0.2) inset;
+}
+
+.prompt-card__emoji {
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.prompt-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.prompt-card__title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--sc-text);
+  line-height: 1.3;
+}
+
+.prompt-card__desc {
+  font-size: 0.8125rem;
+  color: var(--sc-text-muted);
+  line-height: 1.45;
+  margin-top: 0.2rem;
+}
+
+.prompt-suggestion {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--sc-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--sc-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.prompt-suggestion:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--sc-text);
+}
+
+.prompt-suggestion--active {
+  border-color: rgba(232, 232, 232, 0.45);
+  background: rgba(232, 232, 232, 0.1);
+  color: var(--sc-text);
+}
+
+.form-textarea--on-dark {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--sc-border);
+  color: var(--sc-text);
+  box-shadow: none;
+}
+
+.form-textarea--on-dark::placeholder {
+  color: var(--sc-text-muted);
+}
+
+.form-textarea--on-dark:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.form-textarea--on-dark:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(235, 0, 26, 0.5);
+}
+
+.prompt-selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--sc-radius-pill);
+  border: 1px solid var(--sc-border);
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 0.8125rem;
+  color: var(--sc-text-muted);
+}
+
+.prompt-selection-bar strong {
+  color: var(--sc-text);
+  font-weight: 600;
+}
+
 /* Sitecore AI capability flow — 3 boxes + connector line */
 .sitecore-ai-flow__track {
   position: absolute;

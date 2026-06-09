@@ -1,19 +1,39 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { usePhotoBoothStore } from '@/store/photo-booth';
 import { prompts, getAllCategories, getPromptsByCategory } from '@/data/prompts';
 import { FormTextarea } from '@/components/ui/FormInput';
 import { sanitizePrompt } from '@/lib/prompt-sanitizer';
+import { BoothLayout } from '@/components/common/BoothLayout';
+import { IconArrowRight, IconSparkles } from '@/components/icons/BoothIcons';
 import { useEffect, useState } from 'react';
 
 const SUGGESTION_PROMPTS = [
-  'Transform me into a tech innovator at Sitecore with futuristic effects',
-  'Make me appear on stage celebrating 25 years of Sitecore innovation',
-  'Create a professional headshot with Sitecore Silver branding',
-  'Show me as a creative technologist in a modern workspace',
+  {
+    label: 'Tech innovator',
+    text: 'Transform me into a tech innovator at Sitecore with futuristic silver lighting',
+  },
+  {
+    label: 'On stage',
+    text: 'Make me appear on stage celebrating 25 years of Sitecore innovation in Copenhagen',
+  },
+  {
+    label: 'Professional headshot',
+    text: 'Create a professional headshot with elegant Sitecore Silver event styling',
+  },
+  {
+    label: 'Creative technologist',
+    text: 'Show me as a creative technologist in a modern Nordic workspace',
+  },
 ];
+
+const CATEGORY_LABELS: Record<string, string> = {
+  heritage: 'Heritage',
+  celebration: 'Celebration',
+  fun: 'Fun',
+  innovation: 'Innovation',
+};
 
 export default function PromptsPage() {
   const router = useRouter();
@@ -21,17 +41,17 @@ export default function PromptsPage() {
   const capturedPhoto = usePhotoBoothStore((state) => state.capturedPhoto);
   const selectedBackground = usePhotoBoothStore((state) => state.selectedBackground);
   const selectedPrompt = usePhotoBoothStore((state) => state.selectedPrompt);
-  const setSelectedPrompt = usePhotoBoothStore(
-    (state) => state.setSelectedPrompt
-  );
+  const setSelectedPrompt = usePhotoBoothStore((state) => state.setSelectedPrompt);
 
   const [selectedCategory, setSelectedCategory] = useState<string>('heritage');
   const [customPrompt, setCustomPrompt] = useState<string>('');
   const [promptError, setPromptError] = useState<string>('');
   const categories = getAllCategories();
-  const categoryPrompts = getPromptsByCategory(selectedCategory as any);
+  const categoryPrompts = getPromptsByCategory(selectedCategory as 'heritage');
 
-  // Redirect if no session or background
+  const hasCustom = customPrompt.trim().length > 0;
+  const canContinue = hasCustom || selectedPrompt;
+
   useEffect(() => {
     if (!session || !capturedPhoto || !selectedBackground) {
       router.push('/input');
@@ -50,167 +70,178 @@ export default function PromptsPage() {
   };
 
   const validateAndContinue = () => {
-    if (customPrompt.trim()) {
-      // Validate custom prompt
+    if (hasCustom) {
       const result = sanitizePrompt(customPrompt, selectedBackground?.name);
       if (!result.isValid) {
         setPromptError(result.reason || 'Invalid prompt');
         return;
       }
-      // Create custom prompt object and set it
-      const customPromptObj = {
+      const sanitized = result.sanitizedPrompt || customPrompt;
+      setSelectedPrompt({
         id: 'custom',
         title: 'Custom Prompt',
         description: customPrompt.substring(0, 50) + '...',
+        fullPrompt: sanitized,
+        category: 'custom',
         emoji: '✨',
-        text: result.sanitizedPrompt || customPrompt,
-      };
-      setSelectedPrompt(customPromptObj as any);
+      });
       router.push('/processing');
     } else if (selectedPrompt) {
       router.push('/processing');
     }
   };
 
-  const applyCustomPromptSuggestion = (suggestion: string) => {
-    setCustomPrompt(suggestion);
+  const applyCustomPromptSuggestion = (text: string) => {
+    setCustomPrompt(text);
     setPromptError('');
   };
 
   if (!session || !capturedPhoto || !selectedBackground) return null;
 
+  const selectionLabel = hasCustom
+    ? 'Custom prompt'
+    : selectedPrompt?.title ?? 'None selected';
+
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="py-4 px-4 border-b border-silver-400 border-opacity-20">
-        <Link href="/" className="text-2xl font-bold silver-accent hover:text-silver-300 transition">
-          ← Sitecore Silver
-        </Link>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-4xl">
-          <div className="space-y-8 animate-fade-in">
-            {/* Title */}
-            <div className="text-center">
-              <h2 className="text-3xl md:text-4xl font-bold mb-2 silver-accent">
-                Choose Your Transformation
-              </h2>
-              <p className="text-silver-300">
-                Select an AI prompt to enhance your photo
+    <BoothLayout>
+      <div className="flex items-center justify-center p-4 py-8 md:py-10">
+        <div className="w-full max-w-5xl space-y-6 md:space-y-8 animate-fade-in">
+          <div className="text-center space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-muted">
+              Step 4 · AI transformation
+            </p>
+            <h2 className="page-title silver-accent">Choose Your Transformation</h2>
+            <p className="page-subtitle max-w-xl mx-auto">
+              Pick a preset or describe your own vision — AI enhances your photo in Copenhagen
+              2026 style.
+            </p>
+            {selectedBackground && (
+              <p className="text-sm text-sc-muted">
+                Background:{' '}
+                <span className="text-silver-300 font-medium">{selectedBackground.name}</span>
               </p>
-            </div>
+            )}
+          </div>
 
-            {/* Category Filter */}
-            <div className="flex flex-wrap gap-2 justify-center">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded transition ${
-                    selectedCategory === category
-                      ? 'bg-silver-400 text-black font-bold'
-                      : 'silver-bg hover:bg-silver-500'
-                  }`}
-                >
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </button>
-              ))}
-            </div>
+          <div className="flex flex-wrap justify-center gap-2">
+            {categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setSelectedCategory(category)}
+                className={`prompt-category-pill ${
+                  selectedCategory === category ? 'prompt-category-pill--active' : ''
+                }`}
+              >
+                {CATEGORY_LABELS[category] ?? category}
+              </button>
+            ))}
+          </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Preset Prompts */}
-              <div>
-                <h3 className="text-xl font-bold mb-4 silver-accent">
-                  Preset Prompts
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {categoryPrompts.map((prompt) => (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6 items-start">
+            <section className="prompt-panel">
+              <h3 className="prompt-panel__title">Preset prompts</h3>
+              <div className="flex flex-col gap-2.5">
+                {categoryPrompts.map((prompt) => {
+                  const isSelected =
+                    selectedPrompt?.id === prompt.id && !hasCustom;
+                  return (
                     <button
                       key={prompt.id}
+                      type="button"
                       onClick={() => handleSelect(prompt)}
-                      className={`p-3 rounded-lg transition-all duration-300 text-left ${
-                        selectedPrompt?.id === prompt.id && !customPrompt
-                          ? 'ring-4 ring-silver-400 bg-silver-500 text-black'
-                          : 'silver-bg hover:bg-silver-500'
-                      }`}
+                      className={`prompt-card ${isSelected ? 'prompt-card--selected' : ''}`}
                     >
-                      <div className="text-2xl mb-1">{prompt.emoji}</div>
-                      <h4 className="text-sm font-bold mb-1">{prompt.title}</h4>
-                      <p className="text-xs opacity-90">{prompt.description}</p>
-                      {selectedPrompt?.id === prompt.id && !customPrompt && (
-                        <div className="mt-2 text-center text-xs">✓</div>
+                      <span className="prompt-card__emoji" aria-hidden>
+                        {prompt.emoji}
+                      </span>
+                      <span className="prompt-card__body">
+                        <span className="prompt-card__title">{prompt.title}</span>
+                        <span className="prompt-card__desc">{prompt.description}</span>
+                      </span>
+                      {isSelected && (
+                        <span
+                          className="text-sitecore-red text-sm font-bold shrink-0"
+                          aria-label="Selected"
+                        >
+                          ✓
+                        </span>
                       )}
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="prompt-panel">
+              <h3 className="prompt-panel__title">Or create your own</h3>
+
+              <p className="text-sm text-sc-muted mb-3">Quick suggestions — tap to use:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                {SUGGESTION_PROMPTS.map((suggestion) => {
+                  const isActive = customPrompt.trim() === suggestion.text;
+                  return (
+                    <button
+                      key={suggestion.label}
+                      type="button"
+                      onClick={() => applyCustomPromptSuggestion(suggestion.text)}
+                      className={`prompt-suggestion ${isActive ? 'prompt-suggestion--active' : ''}`}
+                      title={suggestion.text}
+                    >
+                      <span className="font-semibold text-sc-text block text-sm mb-0.5">
+                        {suggestion.label}
+                      </span>
+                      <span className="line-clamp-2">{suggestion.text}</span>
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Custom Prompt */}
-              <div>
-                <h3 className="text-xl font-bold mb-4 silver-accent">
-                  Or Create Your Own
-                </h3>
+              <FormTextarea
+                value={customPrompt}
+                onChange={(e) => handleCustomPromptChange(e.target.value)}
+                placeholder="Describe your vision… (max 2000 characters)"
+                maxLength={2000}
+                className="form-textarea--on-dark min-h-[9rem]"
+                aria-label="Custom AI prompt"
+              />
 
-                {/* Suggestion Chips */}
-                <div className="mb-4 space-y-2">
-                  <p className="text-sm text-silver-300 mb-2">Quick suggestions:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {SUGGESTION_PROMPTS.map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        onClick={() => applyCustomPromptSuggestion(suggestion)}
-                        className="text-xs px-3 py-1 bg-silver-600 hover:bg-silver-500 rounded transition"
-                      >
-                        {suggestion.substring(0, 25)}...
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Custom Prompt Input */}
-                <FormTextarea
-                  value={customPrompt}
-                  onChange={(e) => handleCustomPromptChange(e.target.value)}
-                  placeholder="Describe your vision... (max 2000 characters)"
-                  maxLength={2000}
-                  className="min-h-[8rem]"
-                />
-
-                {/* Character Count */}
-                <div className="text-right text-xs text-silver-300 mt-1">
-                  {customPrompt.length}/2000
-                </div>
-
-                {/* Error Message */}
-                {promptError && (
-                  <div className="mt-2 p-2 bg-red-900 border border-red-700 rounded text-red-200 text-sm">
-                    🚫 {promptError}
-                  </div>
-                )}
+              <div className="flex justify-between items-center mt-2 text-xs text-sc-muted">
+                <span>Custom prompts override preset selection</span>
+                <span>{customPrompt.length}/2000</span>
               </div>
+
+              {promptError && (
+                <div
+                  className="mt-3 p-3 rounded-lg border border-red-500/40 bg-red-950/40 text-red-200 text-sm"
+                  role="alert"
+                >
+                  {promptError}
+                </div>
+              )}
+            </section>
+          </div>
+
+          <div className="flex flex-col items-center gap-4 pt-2">
+            <div className="prompt-selection-bar">
+              <IconSparkles size={16} className="text-accent-muted shrink-0" />
+              <span>
+                Selected: <strong>{selectionLabel}</strong>
+              </span>
             </div>
 
-            {/* Continue Button */}
-            <div className="flex justify-center">
-              <button
-                type="button"
-                onClick={validateAndContinue}
-                disabled={!selectedPrompt && !customPrompt.trim()}
-                className="btn-silver text-lg px-10"
-              >
-                Create Magic →
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={validateAndContinue}
+              disabled={!canContinue}
+              className="btn-silver text-lg px-10 min-w-[14rem]"
+            >
+              Create Magic
+              <IconArrowRight size={20} />
+            </button>
           </div>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="py-4 px-4 border-t border-silver-400 border-opacity-20 text-center text-sm text-silver-400">
-        <p>© 2026 Sitecore | 25 Years of Innovation</p>
-      </footer>
-    </div>
+      </div>
+    </BoothLayout>
   );
 }

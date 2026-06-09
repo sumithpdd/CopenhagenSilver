@@ -26,8 +26,9 @@ function buildImageEditPrompt(prompt: string, background: string): string {
 
 Make the transformation clearly visible (environment, lighting, style, or effects as described).
 Preserve the person's face and identity so they remain recognizable.
-Scenes must feel like the Sitecore Silver Celebration in Copenhagen, Denmark (Tivoli / Nordic anniversary event — not other cities).
-Do not change, remove, or replace the Sitecore logo in the image.
+Scenes must feel like the Sitecore Silver Celebration in Copenhagen, Denmark in 2026 (Tivoli / Nordic anniversary event — not other cities).
+Do not change, remove, replace, redraw, or be creative with the Sitecore logo or any brand logos. Do not add new logos to the scene.
+Do not show calendar years other than 2026 in the image.
 Output a new edited image — do not return the original unchanged.
 
 ${SITECORE_IMAGE_BRAND_RULES}`;

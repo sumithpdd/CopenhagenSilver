@@ -50,7 +50,11 @@ export default function ProcessingPage() {
           body: JSON.stringify({
             photo: capturedPhoto,
             backgroundDescription: selectedBackground.description,
-            prompt: selectedPrompt.description || selectedPrompt.title,
+            prompt:
+              selectedPrompt.fullPrompt ||
+              (selectedPrompt as { text?: string }).text ||
+              selectedPrompt.description ||
+              selectedPrompt.title,
           }),
         });
 
@@ -240,7 +244,7 @@ export default function ProcessingPage() {
                 <div className="bg-silver-700 h-2 rounded-full overflow-hidden">
                   <div className="bg-silver-400 h-full w-2/3 animate-pulse" />
                 </div>
-                <p className="text-sm text-silver-400 mt-2">Calling Gemini AI...</p>
+                <p className="text-sm text-silver-400 mt-2">AI...</p>
               </div>
             </>
           )}

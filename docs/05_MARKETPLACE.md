@@ -143,8 +143,7 @@ SITECORE_ATTENDEES_PARENT_PATH=/sitecore/content/sitecoresilver/sitecoresilver/H
 NEXT_PUBLIC_ENABLE_SITECORE_ATTENDEE_PAGES=true
 ```
 
-Get OAuth credentials from **XM Cloud Deploy → Credentials → Environment**.  
-Get the template GUID from Content Editor or GraphQL IDE (`/sitecore/api/authoring/graphql/ide/`).
+Get OAuth credentials from **XM Cloud Deploy → Credentials → Environment** (Automation client + **CM hostname** for `XMC_HOST`).
 
 Verify config: `GET /api/sitecore/status` → `attendeePageSync: true`.
 
@@ -152,15 +151,24 @@ Verify config: `GET /api/sitecore/status` → `attendeePageSync: true`.
 
 ## Step 3 — Run locally
 
+**Standalone (browser tab):**
 ```bash
 npm install
 npm run dev
 # http://localhost:3000
 ```
 
+**Embedded in Sitecore Cloud Portal (recommended):**
+```bash
+npm run dev:marketplace
+# https://localhost:3001 — accept the self-signed certificate once
+```
+
+Register **`https://localhost:3001`** in App Studio (not `http://`). HTTPS avoids mixed-content blocking when the portal loads your app in an iframe. `next.config.js` includes `allowedDevOrigins` for `*.sitecorecloud.io`.
+
 **In Sitecore:** open Cloud Portal → your app tile. The Marketplace SDK connects to the parent window.
 
-**Standalone:** open `http://localhost:3000` directly. SDK init fails gracefully → standalone mode.
+**Standalone:** open `http://localhost:3000` directly, or set `NEXT_PUBLIC_STANDALONE_MODE=true`.
 
 ---
 
@@ -194,11 +202,14 @@ See [06_API_SECURITY.md](./06_API_SECURITY.md) for details.
 
 | Problem | Solution |
 |---------|----------|
-| "Connecting…" forever | Set `NEXT_PUBLIC_STANDALONE_MODE=true` for local dev outside Sitecore |
-| 401 on composit/upload | Set `API_SECRET` and ensure client calls `/api/auth/session` first (automatic via `apiFetch`) |
+| Slow load / "Connecting…" in iframe | Use `npm run dev:marketplace` (HTTPS); match App Studio URL to port |
+| Mixed content / broken images in iframe | Deployment URL must be `https://localhost:3001` (not `http://`) when portal is HTTPS |
+| SyntaxError on `_next/static` chunks | Restart dev after `allowedDevOrigins` in `next.config.js`; hard-refresh portal |
+| 401 on composit/upload | Set `API_SECRET`; client uses `apiFetch` → `/api/auth/session` automatically |
 | Wrong branding | Check `APP_PRESET` and `APP_*` env vars; restart dev server |
-| SDK error in iframe | Deployment URL in App Studio must match running app URL exactly |
+| SDK error in iframe | Deployment URL in App Studio must match running app URL exactly (scheme + port) |
 | Gallery empty | Firebase credentials + Firestore rules; see [04_TROUBLESHOOTING.md](./04_TROUBLESHOOTING.md) |
+| Staff moderation | `/admin` with `ADMIN_SECRET` + `NEXT_PUBLIC_ENABLE_ADMIN=true` |
 
 ---
 

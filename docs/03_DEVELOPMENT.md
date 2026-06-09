@@ -17,6 +17,13 @@ npm run dev
 # Visit http://localhost:3000
 ```
 
+**npm scripts:**
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Standard dev server (`http://localhost:3000`) |
+| `npm run dev:https` | HTTPS on port 3000 (self-signed cert) |
+| `npm run dev:marketplace` | HTTPS on port **3001** — use with Sitecore Marketplace iframe |
+
 **Dev server will:**
 - Watch for file changes
 - Auto-reload browser when you save

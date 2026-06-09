@@ -47,7 +47,6 @@ mutation CreateItem(
   $templateId: ID!
   $parent: ID!
   $language: String!
-  $fields: [FieldInput!]
 ) {
   createItem(
     input: {
@@ -56,7 +55,6 @@ mutation CreateItem(
       templateId: $templateId
       parent: $parent
       language: $language
-      fields: $fields
     }
   ) {
     item {
@@ -69,7 +67,7 @@ mutation CreateItem(
 `;
 
 const UPDATE_ITEM_MUTATION = `
-mutation UpdateItem($itemId: ID!, $language: String!, $fields: [FieldInput!]) {
+mutation UpdateItem($itemId: ID!, $language: String!, $fields: [ItemFieldInput!]!) {
   updateItem(
     input: {
       itemId: $itemId
@@ -150,7 +148,6 @@ export async function createSitecoreItem(options: {
   templateId: string;
   parentId: string;
   language?: string;
-  fields: SitecoreFieldInput[];
 }): Promise<SitecoreItemRef> {
   const token = await getBearerToken();
   const language = options.language ?? 'en';
@@ -162,7 +159,6 @@ export async function createSitecoreItem(options: {
     templateId: bareGuid(normalizeGuid(options.templateId)),
     parent: bareGuid(normalizeGuid(options.parentId)),
     language,
-    fields: options.fields,
   });
 
   if (result.errors?.length) {

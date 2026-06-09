@@ -30,6 +30,7 @@ export function SitecoreLogo({
       height={dim.h}
       className={`${dim.className} object-contain object-left`}
       priority={size === 'md'}
+      unoptimized
     />
   );
 

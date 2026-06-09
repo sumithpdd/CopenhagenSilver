@@ -36,12 +36,13 @@ interface MarketplaceProviderProps {
 /**
  * Initializes the Marketplace SDK when embedded in Sitecore.
  * Falls back to standalone mode when opened directly (localhost, kiosk).
+ * Never blocks the UI — SDK connects in the background.
  */
 export function MarketplaceProvider({ children }: MarketplaceProviderProps) {
   const [mode, setMode] = useState<RuntimeMode>('standalone');
   const [client, setClient] = useState<ClientSDK | null>(null);
   const [appContext, setAppContext] = useState<ApplicationContext | null>(null);
-  const [loading, setLoading] = useState(!shouldSkipMarketplaceSdk());
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (shouldSkipMarketplaceSdk()) {
@@ -51,6 +52,7 @@ export function MarketplaceProvider({ children }: MarketplaceProviderProps) {
     }
 
     let cancelled = false;
+    setLoading(true);
 
     const init = async () => {
       try {
@@ -69,7 +71,6 @@ export function MarketplaceProvider({ children }: MarketplaceProviderProps) {
           setAppContext(res.data);
         }
       } catch {
-        // Not inside Sitecore iframe — run as standalone kiosk
         if (!cancelled) {
           setMode('standalone');
           setClient(null);
@@ -85,14 +86,6 @@ export function MarketplaceProvider({ children }: MarketplaceProviderProps) {
       cancelled = true;
     };
   }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-sc-bg text-sc-text">
-        <p className="text-sc-muted animate-pulse">Connecting…</p>
-      </div>
-    );
-  }
 
   return (
     <MarketplaceContext.Provider value={{ mode, client, appContext, loading }}>

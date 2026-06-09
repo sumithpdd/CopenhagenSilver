@@ -49,6 +49,9 @@ Pages under `src/app/`:
 | `/processing` | `processing/page.tsx` |
 | `/result` | `result/page.tsx` |
 | `/gallery` | `gallery/page.tsx` |
+| `/admin` | `admin/page.tsx` — staff moderation (`ADMIN_SECRET`) |
+| `/summary` | `summary/page.tsx` — 25-year keepsake timeline |
+| `/privacy` | `privacy/page.tsx` |
 
 API routes:
 
@@ -60,6 +63,8 @@ API routes:
 | POST | `/api/upload-photo` | Firebase Storage + Firestore (secured) |
 | GET | `/api/gallery` | List gallery photos |
 | GET | `/api/sitecore/status` | Sitecore CM credentials configured? |
+| POST | `/api/admin/login` | Staff password → httpOnly cookie |
+| GET/PATCH/DELETE | `/api/admin/photos` | Gallery moderation (admin cookie) |
 
 ## Folder Structure
 

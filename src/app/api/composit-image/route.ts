@@ -9,6 +9,9 @@ import {
   getGeminiImageModel,
 } from '@/lib/gemini-image';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 function mimeTypeFromDataUrl(photo: string): string {
   const match = photo.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
   return match?.[1] ?? 'image/jpeg';

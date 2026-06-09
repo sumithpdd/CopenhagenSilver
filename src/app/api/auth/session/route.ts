@@ -5,30 +5,43 @@ import {
   isApiSecretConfigured,
 } from '@/lib/core/api-auth';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'private, no-store, no-cache, must-revalidate',
+  Pragma: 'no-cache',
+};
+
 /**
  * GET /api/auth/session
  * Issues an httpOnly session cookie for client-side API calls when API_SECRET is set.
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const secret = process.env.API_SECRET?.trim();
 
   if (!secret) {
-    return NextResponse.json({
-      success: true,
-      data: { secured: false, message: 'API_SECRET not configured — open mode' },
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: { secured: false, message: 'API_SECRET not configured — open mode' },
+      },
+      { headers: NO_STORE_HEADERS }
+    );
   }
 
   const token = createSessionToken(secret);
-  const response = NextResponse.json({
-    success: true,
-    data: {
-      secured: true,
-      expiresInHours: 4,
-      // Also return token for iframe contexts where third-party cookies are blocked
-      sessionToken: token,
+  const response = NextResponse.json(
+    {
+      success: true,
+      data: {
+        secured: true,
+        expiresInHours: 4,
+        sessionToken: token,
+      },
     },
-  });
+    { headers: NO_STORE_HEADERS }
+  );
 
   response.cookies.set(BOOTH_SESSION_COOKIE, token, {
     httpOnly: true,

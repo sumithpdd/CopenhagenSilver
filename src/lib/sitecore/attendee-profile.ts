@@ -52,6 +52,11 @@ export function getAttendeeTemplateId(): string {
   );
 }
 
+/** Image fields on SitecoreSilverAttendeeProfile expect ImageField JSON, not plain URLs. */
+function formatSitecoreImageFieldValue(url: string): string {
+  return JSON.stringify({ src: url, alt: '', mediaUrl: url });
+}
+
 function buildAttendeeFields(
   profile: AttendeeProfile,
   photoCode: string,
@@ -61,8 +66,8 @@ function buildAttendeeFields(
 ): SitecoreFieldInput[] {
   const fields: SitecoreFieldInput[] = [
     { name: 'Name', value: profile.fullName },
-    { name: 'OriginalPhoto', value: originalPhotoUrl },
-    { name: 'EnhancedPhoto', value: enhancedPhotoUrl },
+    { name: 'OriginalPhoto', value: formatSitecoreImageFieldValue(originalPhotoUrl) },
+    { name: 'EnhancedPhoto', value: formatSitecoreImageFieldValue(enhancedPhotoUrl) },
     { name: 'AIQuote', value: aiQuote },
     { name: 'PhotoCode', value: photoCode },
   ];
@@ -123,21 +128,27 @@ export async function createOrUpdateAttendeePage(
 
   // Prefer human-readable path: /SilverAttendees/Sumith Damodaran
   // If that name already exists (repeat attendee), create /SilverAttendees/SILVER…
-  const tryCreate = async (name: string) =>
-    createSitecoreItem({
+  const createAndFill = async (name: string) => {
+    const created = await createSitecoreItem({
       name,
       templateId,
       parentId: parent.itemId,
       language,
+    });
+    const updated = await updateSitecoreItem({
+      itemId: created.itemId,
+      language,
       fields,
     });
+    return updated;
+  };
 
   try {
-    const created = await tryCreate(displayName || photoCodeName);
+    const item = await createAndFill(displayName || photoCodeName);
     return {
-      itemId: created.itemId,
-      path: created.path,
-      name: created.name,
+      itemId: item.itemId,
+      path: item.path,
+      name: item.name,
       aiQuote,
       created: true,
     };
@@ -163,11 +174,11 @@ export async function createOrUpdateAttendeePage(
       };
     }
 
-    const created = await tryCreate(photoCodeName);
+    const item = await createAndFill(photoCodeName);
     return {
-      itemId: created.itemId,
-      path: created.path,
-      name: created.name,
+      itemId: item.itemId,
+      path: item.path,
+      name: item.name,
       aiQuote,
       created: true,
     };

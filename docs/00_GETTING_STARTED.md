@@ -127,6 +127,32 @@ Ready in 1234ms
 
 You should see the Sitecore Silver home page with silver theme and navigation buttons.
 
+### Sitecore Marketplace local dev (HTTPS iframe)
+
+When testing inside Sitecore Cloud Portal, use HTTPS so assets load in the HTTPS parent frame:
+
+```bash
+npm run dev:marketplace
+# https://localhost:3001 — accept the self-signed cert once in the browser
+```
+
+Set App Studio **Deployment URL** to `https://localhost:3001` (match port exactly). See [05_MARKETPLACE.md](./05_MARKETPLACE.md).
+
+## Admin screen (event staff)
+
+**URL:** `/admin` — e.g. [http://localhost:3000/admin](http://localhost:3000/admin) (or your deploy origin + `/admin`).
+
+1. Set in `.env.local`:
+   ```env
+   NEXT_PUBLIC_ENABLE_ADMIN=true
+   ADMIN_SECRET=choose-a-strong-password-for-event-staff
+   ```
+2. Restart the dev server.
+3. Open `/admin` and sign in with `ADMIN_SECRET`.
+4. Staff can also reach Admin from the footer link on booth pages when admin is enabled.
+
+Moderation uses `/api/admin/photos` (hide/show/delete gallery entries). See [06_API_SECURITY.md](./06_API_SECURITY.md).
+
 ## Step 5: Verify Everything Works
 
 ### Check the Home Page

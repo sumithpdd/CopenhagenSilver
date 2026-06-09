@@ -33,6 +33,7 @@ export function BoothLogo({
       height={dim.h}
       className={`${dim.className} object-contain object-left`}
       priority={size === 'md'}
+      unoptimized={branding.logoPath.startsWith('/')}
     />
   );
 
