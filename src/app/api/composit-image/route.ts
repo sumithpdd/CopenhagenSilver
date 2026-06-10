@@ -8,7 +8,7 @@ import {
   generateTransformedImage,
   getGeminiImageModel,
 } from '@/lib/gemini-image';
-import { normalizeImageForPrintPortrait } from '@/lib/print-portrait';
+import { normalizeImageForPrintPortrait, preparePortraitInputForGeneration } from '@/lib/print-portrait';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -293,12 +293,15 @@ export async function POST(request: NextRequest) {
         ? photo.split(',')[1]
         : photo;
 
+    console.log('📐 [API] Preparing portrait 2:3 input for Gemini...');
+    const portraitInputBase64 = await preparePortraitInputForGeneration(photoBase64);
+
     console.log('⚙️ [API] Processing with Gemini...');
     const compositedBase64 = await processWithGemini(
-      photoBase64,
+      portraitInputBase64,
       finalPrompt,
       backgroundDescription ?? '',
-      mimeType,
+      'image/jpeg',
       ctx
     );
 

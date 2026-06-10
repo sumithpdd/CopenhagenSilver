@@ -25,12 +25,18 @@ function buildImageEditPrompt(prompt: string, background: string): string {
   return `Using the provided portrait photo, apply this edit: ${prompt}${theme}
 
 Make the transformation clearly visible (environment, lighting, style, or effects as described).
-Preserve the person's face and identity so they remain recognizable. Keep the full head, shoulders, and sides in frame — do not crop faces or edges.
-Output a vertical portrait image for 100×148 mm / postcard photo printing (aspect ratio about 2:3, taller than wide).
+Preserve the person's face and identity so they remain recognizable. Keep the full head and shoulders visible — do not crop the top of the head.
+
+CRITICAL — output format:
+- Vertical PORTRAIT only (taller than wide), aspect ratio 2:3 (100×148 mm postcard).
+- The scene MUST fill the entire image edge to edge — no white borders, no empty margins, no letterboxing at top/bottom or sides.
+- Extend background, sky, and environment to all four edges of the frame.
+- Compose the person in the center with the celebration scene filling the full portrait canvas.
+
 Scenes must feel like the Sitecore Silver Celebration in Copenhagen, Denmark in 2026 (Tivoli / Nordic anniversary event — not other cities).
 Do not change, remove, replace, redraw, or be creative with the Sitecore logo or any brand logos. Do not add new logos to the scene.
 Do not show calendar years other than 2026 in the image.
-Output a new edited image — do not return the original unchanged.
+Output a new edited portrait image — do not return the original unchanged.
 
 ${SITECORE_IMAGE_BRAND_RULES}`;
 }

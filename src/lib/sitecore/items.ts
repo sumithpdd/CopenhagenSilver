@@ -109,9 +109,11 @@ mutation UpdateField(
 const INVALID_ITEM_NAME_CHAR_RE = /[\\/:*?"<>|[\]]/g;
 
 /**
- * Produce a valid Sitecore item name (no spaces or invalid characters).
+ * Produce a valid Sitecore item name — letters and digits only.
+ * Strips spaces, Sitecore invalid chars (\\ / : * ? " < > | [ ]), and . , - $ _ etc.
  * "Federico Mujica Cazenave" → "FedericoMujicaCazenave"
- * "SILVER-MQ7Z7Q" → "SILVER-MQ7Z7Q"
+ * "Dr. Smith-Jones" → "DrSmithJones"
+ * "SILVER-MQ7Z7Q" → "SILVERMQ7Z7Q"
  */
 export function sanitizeSitecoreItemName(name: string): string {
   const cleaned = name
@@ -119,9 +121,7 @@ export function sanitizeSitecoreItemName(name: string): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(INVALID_ITEM_NAME_CHAR_RE, '')
-    .replace(/\s+/g, '')
-    .replace(/[^a-zA-Z0-9_-]/g, '')
-    .replace(/^-+|-+$/g, '')
+    .replace(/[^a-zA-Z0-9]/g, '')
     .slice(0, 100);
 
   return cleaned || 'Attendee';

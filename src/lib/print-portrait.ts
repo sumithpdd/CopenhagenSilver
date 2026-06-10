@@ -32,7 +32,7 @@ export function printPortraitAspectRatio(): number {
 }
 
 /**
- * Fit image into portrait print canvas without cropping (letterbox if needed).
+ * Fit image to portrait print canvas — cover + face-aware crop (no white letterbox bars).
  * Outputs JPEG with 300 dpi metadata for SELPHY drivers.
  */
 export async function normalizeImageForPrintPortrait(input: Buffer): Promise<Buffer> {
@@ -41,8 +41,8 @@ export async function normalizeImageForPrintPortrait(input: Buffer): Promise<Buf
   return sharp(input)
     .rotate()
     .resize(width, height, {
-      fit: 'contain',
-      background: { r: 255, g: 255, b: 255 },
+      fit: 'cover',
+      position: sharp.strategy.attention,
     })
     .jpeg({
       quality: 92,
@@ -51,6 +51,24 @@ export async function normalizeImageForPrintPortrait(input: Buffer): Promise<Buf
     })
     .withMetadata({ density: PRINT_DPI })
     .toBuffer();
+}
+
+/** Crop/resize source photo to portrait 2:3 before sending to Gemini (better portrait output). */
+export async function preparePortraitInputForGeneration(base64: string): Promise<string> {
+  const buffer = Buffer.from(base64, 'base64');
+  const targetW = 832;
+  const targetH = Math.round(targetW / printPortraitAspectRatio());
+
+  const prepared = await sharp(buffer)
+    .rotate()
+    .resize(targetW, targetH, {
+      fit: 'cover',
+      position: sharp.strategy.attention,
+    })
+    .jpeg({ quality: 90 })
+    .toBuffer();
+
+  return prepared.toString('base64');
 }
 
 export function printPageSizeCss(): { width: string; height: string } {
