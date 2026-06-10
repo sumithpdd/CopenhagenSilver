@@ -7,8 +7,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   apiFetch,
   isApiSessionError,
-  refreshApiSession,
 } from '@/lib/core/api-client';
+import { fetchCompositedPhoto } from '@/lib/composit-client';
 
 export default function ProcessingPage() {
   const router = useRouter();
@@ -47,44 +47,13 @@ export default function ProcessingPage() {
           throw new Error('Missing required data for processing');
         }
 
-        // Fresh session before mutating APIs (avoids stale CDN-cached tokens on Vercel)
-        await refreshApiSession();
-
-        // Step 1: Enhance image
+        // Step 1: Enhance image (portrait 100×148 mm @ 300 dpi for SELPHY)
         console.log('🎨 Step 1: Calling /api/composit-image...');
-        const enhanceResponse = await apiFetch('/api/composit-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            photo: capturedPhoto,
-            backgroundDescription: selectedBackground.description,
-            prompt:
-              selectedPrompt.fullPrompt ||
-              (selectedPrompt as { text?: string }).text ||
-              selectedPrompt.description ||
-              selectedPrompt.title,
-          }),
+        const compositedPhoto = await fetchCompositedPhoto({
+          photo: capturedPhoto,
+          background: selectedBackground,
+          prompt: selectedPrompt,
         });
-
-        console.log('📡 Response status:', enhanceResponse.status);
-        const enhanceText = await enhanceResponse.text();
-        console.log('📄 Raw response:', enhanceText.substring(0, 200));
-
-        if (!enhanceResponse.ok) {
-          throw new Error(`Enhance API failed: ${enhanceResponse.status} - ${enhanceText}`);
-        }
-
-        const enhanceResult = JSON.parse(enhanceText);
-        console.log('✅ Enhance result:', enhanceResult.success ? 'SUCCESS' : 'FAILED');
-
-        if (!enhanceResult.success) {
-          throw new Error(enhanceResult.error || 'Enhancement failed');
-        }
-
-        const compositedPhoto = enhanceResult.data?.compositedPhoto;
-        if (!compositedPhoto) {
-          throw new Error('No composited photo in response');
-        }
 
         console.log('✅ Image enhanced successfully');
         setCompositedPhoto(compositedPhoto);

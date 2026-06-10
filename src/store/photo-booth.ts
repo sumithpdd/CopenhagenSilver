@@ -51,6 +51,8 @@ interface PhotoBoothState {
   sitecoreSyncError: string | null;
 
   setCompositedPhoto: (url: string, photoId?: string, photoCode?: string) => void;
+  /** Update preview only (regenerate AI) without changing gallery photo code. */
+  setCompositedPreview: (url: string) => void;
   setSitecoreAttendeePage: (page: SitecoreAttendeePageResult | null) => void;
   setSitecoreSyncError: (error: string | null) => void;
   resetResult: () => void;
@@ -127,6 +129,14 @@ export const usePhotoBoothStore = create<PhotoBoothState>((set) => ({
       compositedPhotoUrl: url,
       ...(photoId && { photoId }),
       ...(photoCode && { photoCode }),
+      isProcessing: false,
+      processingStep: null,
+      processingError: null,
+    }),
+
+  setCompositedPreview: (url) =>
+    set({
+      compositedPhotoUrl: url,
       isProcessing: false,
       processingStep: null,
       processingError: null,

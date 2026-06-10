@@ -231,6 +231,8 @@ export async function createOrUpdateAttendeePage(
 
   const displayName = sanitizeSitecoreItemName(input.profile.fullName);
   const photoCodeName = sanitizeSitecoreItemName(input.photoCode);
+  const primaryName =
+    displayName.length >= 2 ? displayName : photoCodeName || 'Attendee';
 
   const photoUrls = {
     original: input.originalPhotoUrl,
@@ -267,8 +269,6 @@ export async function createOrUpdateAttendeePage(
   if (existing) {
     return await updateExisting(existing);
   }
-
-  const primaryName = displayName || photoCodeName;
 
   try {
     const item = await createAndFill(primaryName);

@@ -8,6 +8,7 @@ import {
   generateTransformedImage,
   getGeminiImageModel,
 } from '@/lib/gemini-image';
+import { normalizeImageForPrintPortrait } from '@/lib/print-portrait';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -301,11 +302,13 @@ export async function POST(request: NextRequest) {
       ctx
     );
 
-    // Convert base64 to buffer and add logo
+    // Convert base64 to buffer, add logo, then normalize for SELPHY portrait print
     console.log('🎨 [API] Adding logo overlay...');
     const imageBuffer = Buffer.from(compositedBase64, 'base64');
     const imageWithLogo = await addLogoToImage(imageBuffer, ctx.logoPath);
-    const finalBase64WithLogo = imageWithLogo.toString('base64');
+    console.log('📐 [API] Normalizing for portrait print (100×148 mm @ 300 dpi)...');
+    const printReady = await normalizeImageForPrintPortrait(imageWithLogo);
+    const finalBase64WithLogo = printReady.toString('base64');
 
     // Ensure base64 is properly formatted
     const finalBase64 = finalBase64WithLogo.includes('data:')

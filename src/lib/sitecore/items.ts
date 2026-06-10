@@ -105,13 +105,26 @@ mutation UpdateField(
 }
 `;
 
-/** Sitecore item names cannot contain these characters. */
+/** Sitecore InvalidItemNameChars: \ / : * ? " < > | [ ] — plus spaces (not allowed in item names). */
+const INVALID_ITEM_NAME_CHAR_RE = /[\\/:*?"<>|[\]]/g;
+
+/**
+ * Produce a valid Sitecore item name (no spaces or invalid characters).
+ * "Federico Mujica Cazenave" → "FedericoMujicaCazenave"
+ * "SILVER-MQ7Z7Q" → "SILVER-MQ7Z7Q"
+ */
 export function sanitizeSitecoreItemName(name: string): string {
-  return name
+  const cleaned = name
     .trim()
-    .replace(/[\\/:*?"<>|]/g, '')
-    .replace(/\s+/g, ' ')
-    .slice(0, 100) || 'Attendee';
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(INVALID_ITEM_NAME_CHAR_RE, '')
+    .replace(/\s+/g, '')
+    .replace(/[^a-zA-Z0-9_-]/g, '')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 100);
+
+  return cleaned || 'Attendee';
 }
 
 export async function getItemByPath(

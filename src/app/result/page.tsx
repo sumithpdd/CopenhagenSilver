@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePhotoBoothStore } from '@/store/photo-booth';
 import { useEffect, useState } from 'react';
 import { downloadImage, printPhoto } from '@/lib/photo-actions';
+import { fetchCompositedPhoto } from '@/lib/composit-client';
+import { isApiSessionError } from '@/lib/core/api-client';
 import { BoothLayout } from '@/components/common/BoothLayout';
 
 export default function ResultPage() {
@@ -18,6 +20,7 @@ export default function ResultPage() {
   const selectedBackground = usePhotoBoothStore((state) => state.selectedBackground);
   const selectedPrompt = usePhotoBoothStore((state) => state.selectedPrompt);
   const resetSession = usePhotoBoothStore((state) => state.resetSession);
+  const setCompositedPreview = usePhotoBoothStore((state) => state.setCompositedPreview);
 
   const [fallbackPhotoCode] = useState(() => {
     const timestamp = Date.now().toString(36).toUpperCase();
@@ -32,6 +35,7 @@ export default function ResultPage() {
     Boolean(capturedPhoto && compositedPhotoUrl && capturedPhoto !== compositedPhotoUrl);
 
   const [downloading, setDownloading] = useState<'original' | 'composite' | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,6 +64,29 @@ export default function ResultPage() {
 
   const handlePrint = () => {
     printPhoto(compositedPhoto!, { code: photoCode });
+  };
+
+  const handleRegenerate = async () => {
+    if (!capturedPhoto || !selectedBackground || !selectedPrompt) return;
+    setActionError(null);
+    setRegenerating(true);
+    try {
+      const next = await fetchCompositedPhoto({
+        photo: capturedPhoto,
+        background: selectedBackground,
+        prompt: selectedPrompt,
+      });
+      setCompositedPreview(next);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Regeneration failed';
+      setActionError(
+        isApiSessionError(message)
+          ? `${message} — try again in a moment.`
+          : message
+      );
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   if (!session || !compositedPhoto || !selectedBackground || !selectedPrompt)
@@ -102,18 +129,38 @@ export default function ResultPage() {
               </div>
             )}
 
-            <div className="brand-card p-4 space-y-3">
+            <div className="brand-card p-4 space-y-3 relative">
+              {regenerating && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-black/70 gap-3">
+                  <div className="w-12 h-12 border-4 border-silver-400 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-silver-200 text-sm">Regenerating AI photo…</p>
+                </div>
+              )}
               <p className="text-sm font-bold text-silver-400 uppercase tracking-wide text-center">
                 {hasBoth ? 'AI Enhanced' : 'Your Photo'}
+              </p>
+              <p className="text-xs text-silver-500 text-center">
+                Portrait · 100×148 mm · ready for SELPHY CP1300
               </p>
               <img
                 src={compositedPhoto}
                 alt="Your AI-transformed photo"
-                className="w-full rounded-lg border-4 border-silver-400 object-contain max-h-[420px] bg-black mx-auto"
+                className="w-full max-w-sm mx-auto rounded-lg border-4 border-silver-400 object-contain aspect-[100/148] bg-white"
               />
               <button
                 type="button"
-                disabled={downloading !== null}
+                disabled={downloading !== null || regenerating}
+                onClick={() => void handleRegenerate()}
+                className="w-full btn-silver-outline text-sm py-2 disabled:opacity-50"
+              >
+                {regenerating ? 'Regenerating…' : '🔄 Regenerate AI Photo'}
+              </button>
+              <p className="text-xs text-silver-500 text-center">
+                Not happy with the result? Regenerate until you are ready to print.
+              </p>
+              <button
+                type="button"
+                disabled={downloading !== null || regenerating}
                 onClick={() => handleDownload('composite')}
                 className="w-full btn-silver text-sm py-2 disabled:opacity-50"
               >
@@ -195,7 +242,12 @@ export default function ResultPage() {
           </Link>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <button type="button" onClick={handlePrint} className="btn-silver-outline">
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={regenerating}
+              className="btn-silver-outline disabled:opacity-50"
+            >
               🖨️ Print
             </button>
             <button
