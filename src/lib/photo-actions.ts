@@ -38,11 +38,24 @@ export interface PrintPhotoOptions {
   subtitle?: string;
   /** Show photo code footer — off by default for full-bleed photo prints. */
   showFooter?: boolean;
+  /** Canon SELPHY CP1300 default media — 4×6 in (10×15 cm). */
+  paperWidthIn?: number;
+  paperHeightIn?: number;
 }
 
-/** Print a single photo full-bleed (kiosk / SELPHY-style photo output). */
+/**
+ * Print a single photo sized for Canon SELPHY CP1300 (4×6 postcard).
+ * Uses object-fit: contain so the full image is visible — no head/side cropping.
+ */
 export function printPhoto(imageSrc: string, options: PrintPhotoOptions = {}) {
-  const { code, subtitle, showFooter = false } = options;
+  const {
+    code,
+    subtitle,
+    showFooter = false,
+    paperWidthIn = 4,
+    paperHeightIn = 6,
+  } = options;
+
   const printWindow = window.open('', '_blank', 'height=900,width=1200');
   if (!printWindow) return;
 
@@ -60,81 +73,110 @@ export function printPhoto(imageSrc: string, options: PrintPhotoOptions = {}) {
       `
       : '';
 
+  const safeSrc = JSON.stringify(imageSrc);
+  const footerHeight = showFooter ? '0.35in' : '0in';
+
   printWindow.document.write(`
     <!DOCTYPE html>
     <html>
       <head>
+        <meta charset="utf-8" />
         <title>Sitecore Silver${code ? ` - ${escapeHtml(code)}` : ''}</title>
-        <style>
+        <style id="base-style">
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          @page { size: auto; margin: 0; }
           html, body {
-            width: 100%;
-            height: 100%;
             overflow: hidden;
-            background: #000;
+            background: #fff;
           }
           .print-page {
-            width: 100vw;
-            height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: stretch;
-            justify-content: stretch;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
           }
           .photo-wrap {
             flex: 1 1 auto;
-            width: 100%;
-            height: 100%;
-            min-height: 0;
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 100%;
+            background: #fff;
+            padding: 0.06in;
           }
           img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
             display: block;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            object-position: center center;
           }
           .footer {
             flex: 0 0 auto;
-            padding: 8px 12px;
+            width: 100%;
+            padding: 0.04in 0.08in;
             text-align: center;
             background: #fff;
             color: #808080;
             font-family: Arial, sans-serif;
-            font-size: 11px;
+            font-size: 9pt;
           }
           .code { font-weight: bold; color: #a0a0a0; margin-bottom: 2px; }
-          @media print {
-            html, body { width: 100%; height: 100%; }
-            .print-page { width: 100%; height: 100%; }
-            .photo-wrap { height: ${showFooter ? 'calc(100% - 36px)' : '100%'}; }
-          }
         </style>
+        <style id="page-style"></style>
       </head>
       <body>
         <div class="print-page">
           <div class="photo-wrap">
-            <img src="${imageSrc}" alt="AI Enhanced photo" />
+            <img id="photo" alt="AI Enhanced photo" />
           </div>
           ${footerHtml}
         </div>
         <script>
-          window.onload = () => {
-            const img = document.querySelector('img');
-            const runPrint = () => {
-              window.print();
-              window.addEventListener('afterprint', () => window.close());
-            };
-            if (img && !img.complete) {
-              img.onload = runPrint;
-              img.onerror = runPrint;
-            } else {
-              runPrint();
+          (function () {
+            var imageSrc = ${safeSrc};
+            var paperW = ${paperWidthIn};
+            var paperH = ${paperHeightIn};
+            var footerH = ${JSON.stringify(footerHeight)};
+            var img = document.getElementById('photo');
+            var pageStyle = document.getElementById('page-style');
+
+            function applyLayout(naturalW, naturalH) {
+              var landscape = naturalW >= naturalH;
+              var pageWidth = landscape ? paperH + 'in' : paperW + 'in';
+              var pageHeight = landscape ? paperW + 'in' : paperH + 'in';
+
+              pageStyle.textContent =
+                '@page { size: ' + pageWidth + ' ' + pageHeight + '; margin: 0; }' +
+                'html, body, .print-page { width: ' + pageWidth + '; height: ' + pageHeight + '; }' +
+                '.photo-wrap { height: calc(' + pageHeight + ' - ' + footerH + '); }';
+
+              img.style.maxWidth = 'calc(' + pageWidth + ' - 0.12in)';
+              img.style.maxHeight = 'calc(' + pageHeight + ' - ' + footerH + ' - 0.12in)';
             }
-          };
+
+            function runPrint() {
+              window.print();
+              window.addEventListener('afterprint', function () { window.close(); });
+            }
+
+            function onReady() {
+              applyLayout(img.naturalWidth, img.naturalHeight);
+              requestAnimationFrame(function () {
+                requestAnimationFrame(runPrint);
+              });
+            }
+
+            img.onload = onReady;
+            img.onerror = runPrint;
+            img.src = imageSrc;
+
+            if (img.complete && img.naturalWidth) {
+              onReady();
+            }
+          })();
         </script>
       </body>
     </html>
