@@ -14,6 +14,7 @@ export default function ResultPage() {
   const compositedPhotoUrl = usePhotoBoothStore((state) => state.compositedPhotoUrl);
   const storedPhotoCode = usePhotoBoothStore((state) => state.photoCode);
   const sitecoreAttendeePage = usePhotoBoothStore((state) => state.sitecoreAttendeePage);
+  const sitecoreSyncError = usePhotoBoothStore((state) => state.sitecoreSyncError);
   const selectedBackground = usePhotoBoothStore((state) => state.selectedBackground);
   const selectedPrompt = usePhotoBoothStore((state) => state.selectedPrompt);
   const resetSession = usePhotoBoothStore((state) => state.resetSession);
@@ -153,6 +154,25 @@ export default function ResultPage() {
                   Open in Content Editor
                 </a>
               )}
+              <p className="text-silver-500 text-xs">
+                Items are in the <strong>master</strong> database — publish the item (and parent
+                site) to see it on the live Sitecore site.
+              </p>
+            </div>
+          )}
+
+          {!sitecoreAttendeePage && sitecoreSyncError && (
+            <div className="brand-card p-6 space-y-2 text-sm border border-amber-500/40">
+              <p className="text-amber-400 font-semibold uppercase tracking-wide">
+                Sitecore sync did not complete
+              </p>
+              <p className="text-silver-300 text-xs break-words">{sitecoreSyncError}</p>
+              <p className="text-silver-500 text-xs">
+                Your photo was saved to the gallery. Check Content Editor at{' '}
+                <span className="font-mono">
+                  /sitecore/content/sitecoresilver/sitecoresilver/Home/SilverAttendees
+                </span>
+              </p>
             </div>
           )}
 

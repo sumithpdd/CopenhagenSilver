@@ -48,9 +48,11 @@ interface PhotoBoothState {
   photoId: string | null;
   photoCode: string | null;
   sitecoreAttendeePage: SitecoreAttendeePageResult | null;
+  sitecoreSyncError: string | null;
 
   setCompositedPhoto: (url: string, photoId?: string, photoCode?: string) => void;
   setSitecoreAttendeePage: (page: SitecoreAttendeePageResult | null) => void;
+  setSitecoreSyncError: (error: string | null) => void;
   resetResult: () => void;
 
   // Overall reset
@@ -72,6 +74,7 @@ const initialState = {
   photoId: null,
   photoCode: null,
   sitecoreAttendeePage: null,
+  sitecoreSyncError: null,
 };
 
 export const usePhotoBoothStore = create<PhotoBoothState>((set) => ({
@@ -131,12 +134,15 @@ export const usePhotoBoothStore = create<PhotoBoothState>((set) => ({
 
   setSitecoreAttendeePage: (page) => set({ sitecoreAttendeePage: page }),
 
+  setSitecoreSyncError: (error) => set({ sitecoreSyncError: error }),
+
   resetResult: () =>
     set({
       compositedPhotoUrl: null,
       photoId: null,
       photoCode: null,
       sitecoreAttendeePage: null,
+      sitecoreSyncError: null,
       capturedPhoto: null,
       selectedBackground: null,
       selectedPrompt: null,

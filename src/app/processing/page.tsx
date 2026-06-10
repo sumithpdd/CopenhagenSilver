@@ -21,6 +21,7 @@ export default function ProcessingPage() {
   const consentGalleryShare = usePhotoBoothStore((state) => state.consentGalleryShare);
   const attendeeProfile = usePhotoBoothStore((state) => state.attendeeProfile);
   const setSitecoreAttendeePage = usePhotoBoothStore((state) => state.setSitecoreAttendeePage);
+  const setSitecoreSyncError = usePhotoBoothStore((state) => state.setSitecoreSyncError);
 
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
@@ -147,6 +148,7 @@ export default function ProcessingPage() {
             if (uploadResult.data.sitecoreAttendeePage) {
               setSitecoreAttendeePage(uploadResult.data.sitecoreAttendeePage);
             }
+            setSitecoreSyncError(uploadResult.data.sitecoreSyncError ?? null);
           }
         }
 
@@ -180,6 +182,7 @@ export default function ProcessingPage() {
     consentGalleryShare,
     attendeeProfile,
     setSitecoreAttendeePage,
+    setSitecoreSyncError,
   ]);
 
   const handleRetry = async () => {

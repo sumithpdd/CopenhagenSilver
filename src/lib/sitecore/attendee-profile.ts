@@ -58,10 +58,6 @@ export function getAttendeeTemplateId(): string {
   );
 }
 
-/** ImageField JSON for external URLs (fallback when plain URL fails). */
-function formatSitecoreImageFieldValue(url: string): string {
-  return JSON.stringify({ src: url, alt: '', mediaUrl: url });
-}
 
 function buildAttendeeFields(
   profile: AttendeeProfile,
@@ -74,7 +70,7 @@ function buildAttendeeFields(
     { name: 'Name', value: profile.fullName },
     { name: 'OriginalPhoto', value: originalPhotoUrl },
     { name: 'EnhancedPhoto', value: enhancedPhotoUrl },
-    { name: 'AIQuote', value: aiQuote },
+    { name: 'AiQuote', value: aiQuote },
     { name: 'PhotoCode', value: photoCode },
   ];
 
@@ -84,7 +80,7 @@ function buildAttendeeFields(
   }
   if (profile.role) fields.push({ name: 'Role', value: profile.role });
   if (profile.linkedInUrl) {
-    fields.push({ name: 'LinkedInUrl', value: profile.linkedInUrl });
+    fields.push({ name: 'LinkedIn', value: profile.linkedInUrl });
   }
   if (profile.headline) fields.push({ name: 'Headline', value: profile.headline });
 
@@ -140,35 +136,19 @@ function attendeeResult(
   };
 }
 
+/** ImageField JSON fallback — template uses Single-Line Text URLs; try plain URL first. */
 async function updateFieldWithPhotoFallback(
   itemId: string,
   language: string,
   fieldName: string,
   plainUrl: string
 ) {
-  try {
-    return await updateSitecoreItemField({
-      itemId,
-      language,
-      name: fieldName,
-      value: plainUrl,
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (
-      fieldName !== 'OriginalPhoto' &&
-      fieldName !== 'EnhancedPhoto' &&
-      !/field|type|value/i.test(message)
-    ) {
-      throw error;
-    }
-    return await updateSitecoreItemField({
-      itemId,
-      language,
-      name: fieldName,
-      value: formatSitecoreImageFieldValue(plainUrl),
-    });
-  }
+  return await updateSitecoreItemField({
+    itemId,
+    language,
+    name: fieldName,
+    value: plainUrl,
+  });
 }
 
 async function updateAttendeeFields(

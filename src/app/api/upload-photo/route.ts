@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
     await db.collection('photobooth').doc(photoId).set(photoDoc);
 
     let sitecoreAttendeePage = null;
+    let sitecoreSyncError: string | null = null;
     const syncToSitecore =
       parseBool(formData.get('syncToSitecore')) ||
       resolveAppConfig().features.sitecoreAttendeePages;
@@ -151,9 +152,14 @@ export async function POST(request: NextRequest) {
           sitecoreAttendeePage.path
         );
       } catch (sitecoreError) {
+        sitecoreSyncError =
+          sitecoreError instanceof Error ? sitecoreError.message : String(sitecoreError);
         console.error('⚠️ [SITECORE] Attendee page sync failed:', sitecoreError);
         // Photo upload still succeeds — Sitecore sync is best-effort
       }
+    } else if (syncToSitecore && !isAttendeePageSyncConfigured()) {
+      sitecoreSyncError =
+        'Sitecore attendee sync not configured (SITECORE_CLIENT_ID, SITECORE_CLIENT_SECRET, XMC_HOST).';
     }
 
     return NextResponse.json({
@@ -167,6 +173,7 @@ export async function POST(request: NextRequest) {
         consentGalleryShare,
         photo: docToPhoto(photoId, photoDoc),
         sitecoreAttendeePage,
+        sitecoreSyncError,
       },
     });
   } catch (error) {
