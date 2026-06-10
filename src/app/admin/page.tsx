@@ -1,9 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { BoothLayout } from '@/components/common/BoothLayout';
+import { SocialSharePanel } from '@/components/photo-booth/SocialSharePanel';
 import { FormInput } from '@/components/ui/FormInput';
+import { bootstrapApiSession } from '@/lib/core/api-client';
 import type { PhotoBoothPhoto, PhotoVisibility, ModerationStatus } from '@/types';
 
 type AdminPhoto = PhotoBoothPhoto;
@@ -42,6 +44,7 @@ export default function AdminPage() {
   }, [filter]);
 
   useEffect(() => {
+    bootstrapApiSession();
     loadPhotos();
   }, [loadPhotos]);
 
@@ -229,12 +232,14 @@ function AdminPhotoRow({
 }) {
   const [name, setName] = useState(photo.userName);
   const [note, setNote] = useState(photo.moderationNote ?? '');
+  const [showShare, setShowShare] = useState(false);
 
   const isHidden = photo.visibility === 'hidden';
   const galleryConsent = photo.consentGalleryShare !== false;
 
   return (
-    <div className="brand-card p-4 flex flex-col md:flex-row gap-4">
+    <div className="brand-card p-4 flex flex-col gap-4">
+      <div className="flex flex-col md:flex-row gap-4">
       <div className="shrink-0 w-full md:w-40 h-32 rounded overflow-hidden bg-black">
         <img
           src={photo.compositedPhotoUrl}
@@ -318,12 +323,34 @@ function AdminPhotoRow({
         </button>
         <button
           type="button"
+          className="btn-silver-outline !py-2 text-sm"
+          onClick={() => setShowShare((v) => !v)}
+        >
+          {showShare ? 'Close share' : '📱 Share to social'}
+        </button>
+        <button
+          type="button"
           className="!py-2 text-sm px-4 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-900/20"
           onClick={() => onDelete(photo.id)}
         >
           Delete permanently
         </button>
       </div>
+      </div>
+
+      {showShare && (
+        <Suspense fallback={null}>
+          <SocialSharePanel
+            imageUrl={photo.compositedPhotoUrl}
+            userName={photo.userName}
+            photoCode={photo.photoCode}
+            company={photo.attendeeProfile?.company}
+            role={photo.attendeeProfile?.role}
+            returnPath="/admin"
+            compact
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

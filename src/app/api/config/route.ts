@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { resolveAppConfig } from '@/lib/core/app-config';
+import { isLinkedInConfigured } from '@/lib/linkedin/auth';
 import { getSitecoreBrandRules } from '@/lib/sitecore/brand-rules';
 
 /**
@@ -20,7 +21,13 @@ export async function GET() {
       data: {
         mode: config.mode,
         branding: config.branding,
-        features: config.features,
+        features: {
+          ...config.features,
+          linkedInConfigured: isLinkedInConfigured(),
+          linkedInShare:
+            config.features.linkedInShare || isLinkedInConfigured(),
+          socialShare: true,
+        },
         backgrounds: config.backgrounds,
         prompts: config.prompts,
         // Do not expose full brand rules to client — server-only for Gemini

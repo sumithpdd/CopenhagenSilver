@@ -3,8 +3,8 @@ import { requireApiAuth } from '@/lib/core/api-auth';
 import { generateLinkedInCaption } from '@/lib/linkedin/caption';
 import { getLinkedInSession, isLinkedInConfigured } from '@/lib/linkedin/auth';
 import {
-  decodeImageToBuffer,
   publishLinkedInImagePost,
+  resolveImageBuffer,
   uploadLinkedInImage,
 } from '@/lib/linkedin/post';
 
@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as {
       image?: string;
+      imageUrl?: string;
       userName?: string;
       promptTitle?: string;
       backgroundName?: string;
@@ -46,9 +47,9 @@ export async function POST(request: NextRequest) {
       caption?: string;
     };
 
-    if (!body.image?.trim()) {
+    if (!body.image?.trim() && !body.imageUrl?.trim()) {
       return NextResponse.json(
-        { success: false, error: 'image is required' },
+        { success: false, error: 'image or imageUrl is required' },
         { status: 400 }
       );
     }
@@ -71,13 +72,7 @@ export async function POST(request: NextRequest) {
         photoCode: body.photoCode,
       }));
 
-    const imageBuffer = decodeImageToBuffer(body.image);
-    if (imageBuffer.length < 1000) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid image data' },
-        { status: 400 }
-      );
-    }
+    const imageBuffer = await resolveImageBuffer(body.image, body.imageUrl);
 
     const assetUrn = await uploadLinkedInImage(
       session.accessToken,

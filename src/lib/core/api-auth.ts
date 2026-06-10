@@ -10,6 +10,7 @@
 
 import { createHmac, timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAdminRequest } from '@/lib/admin-auth';
 
 export const BOOTH_SESSION_COOKIE = 'booth_api_session';
 const SESSION_TTL_MS = 60 * 60 * 4; // 4 hours
@@ -94,6 +95,11 @@ export function requireApiAuth(request: NextRequest): ApiAuthResult {
 
   const session = request.cookies.get(BOOTH_SESSION_COOKIE)?.value;
   if (session && verifySessionToken(session, secret)) {
+    return { authorized: true };
+  }
+
+  // Admin staff session (gallery moderation + social share from /admin)
+  if (verifyAdminRequest(request)) {
     return { authorized: true };
   }
 

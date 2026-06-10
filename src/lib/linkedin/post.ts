@@ -128,3 +128,27 @@ export function decodeImageToBuffer(image: string): Buffer {
   const base64 = image.includes(',') ? image.split(',')[1] : image;
   return Buffer.from(base64, 'base64');
 }
+
+/** Resolve image bytes from base64 data URL or a public HTTPS URL (e.g. Firebase Storage). */
+export async function resolveImageBuffer(
+  image?: string,
+  imageUrl?: string
+): Promise<Buffer> {
+  if (imageUrl?.trim()) {
+    const res = await fetch(imageUrl.trim());
+    if (!res.ok) {
+      throw new Error(`Failed to fetch image (${res.status})`);
+    }
+    return Buffer.from(await res.arrayBuffer());
+  }
+
+  if (image?.trim()) {
+    const buffer = decodeImageToBuffer(image);
+    if (buffer.length < 1000) {
+      throw new Error('Invalid image data');
+    }
+    return buffer;
+  }
+
+  throw new Error('image or imageUrl is required');
+}

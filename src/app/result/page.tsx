@@ -8,10 +8,8 @@ import { downloadImage, printPhoto } from '@/lib/photo-actions';
 import { fetchCompositedPhoto } from '@/lib/composit-client';
 import { isApiSessionError } from '@/lib/core/api-client';
 import { BoothLayout } from '@/components/common/BoothLayout';
-import { LinkedInSharePanel } from '@/components/photo-booth/LinkedInSharePanel';
-import { useAppConfig } from '@/components/providers/app-config-provider';
-
-function ResultLinkedInShare({
+import { SocialSharePanel } from '@/components/photo-booth/SocialSharePanel';
+function ResultSocialShare({
   compositedPhoto,
   userName,
   photoCode,
@@ -30,7 +28,7 @@ function ResultLinkedInShare({
 }) {
   return (
     <Suspense fallback={null}>
-      <LinkedInSharePanel
+      <SocialSharePanel
         compositedPhoto={compositedPhoto}
         userName={userName}
         photoCode={photoCode}
@@ -38,6 +36,7 @@ function ResultLinkedInShare({
         backgroundName={backgroundName}
         company={company}
         role={role}
+        returnPath="/result"
       />
     </Suspense>
   );
@@ -45,7 +44,6 @@ function ResultLinkedInShare({
 
 export default function ResultPage() {
   const router = useRouter();
-  const { features } = useAppConfig();
   const session = usePhotoBoothStore((state) => state.session);
   const capturedPhoto = usePhotoBoothStore((state) => state.capturedPhoto);
   const compositedPhotoUrl = usePhotoBoothStore((state) => state.compositedPhotoUrl);
@@ -209,17 +207,15 @@ export default function ResultPage() {
             <p className="text-red-400 text-sm text-center">{actionError}</p>
           )}
 
-          {features.linkedInShare && (
-            <ResultLinkedInShare
-              compositedPhoto={compositedPhoto}
-              userName={session.userName}
-              photoCode={photoCode}
-              promptTitle={selectedPrompt.title}
-              backgroundName={selectedBackground.name}
-              company={attendeeProfile?.company}
-              role={attendeeProfile?.role}
-            />
-          )}
+          <ResultSocialShare
+            compositedPhoto={compositedPhoto}
+            userName={session.userName}
+            photoCode={photoCode}
+            promptTitle={selectedPrompt.title}
+            backgroundName={selectedBackground.name}
+            company={attendeeProfile?.company}
+            role={attendeeProfile?.role}
+          />
 
           {sitecoreAttendeePage && (
             <div className="brand-card p-6 space-y-3 text-sm">
