@@ -21,11 +21,18 @@ function resetSessionState(): void {
   sessionInitPromise = null;
 }
 
-async function fetchApiSession(): Promise<void> {
-  const res = await fetch(`/api/auth/session?_=${Date.now()}`, {
+async function fetchApiSession(attempt = 0): Promise<void> {
+  const maxAttempts = 3;
+  const bust = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  const res = await fetch(`/api/auth/session?_=${bust}`, {
     credentials: 'include',
     cache: 'no-store',
-    headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    headers: {
+      'Cache-Control': 'no-cache, no-store',
+      Pragma: 'no-cache',
+      'X-Session-Bust': bust,
+    },
   });
 
   if (!res.ok) {
@@ -47,7 +54,11 @@ async function fetchApiSession(): Promise<void> {
   }
 
   if (body.data?.sessionToken) {
+    // CDN/browser may return a cached session response — retry with a new bust key
     if (!isSessionTokenFresh(body.data.sessionToken)) {
+      if (attempt + 1 < maxAttempts) {
+        return fetchApiSession(attempt + 1);
+      }
       throw new Error('API session token expired — retry');
     }
     sessionToken = body.data.sessionToken;
@@ -154,4 +165,10 @@ export function bootstrapApiSession(): void {
   void ensureApiSession().catch(() => {
     resetSessionState();
   });
+}
+
+/** Force a new session token (e.g. right before composit/upload on processing page). */
+export async function refreshApiSession(): Promise<void> {
+  resetSessionState();
+  await ensureApiSession({ force: true });
 }

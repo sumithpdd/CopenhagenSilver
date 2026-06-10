@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePhotoBoothStore } from '@/store/photo-booth';
 import { useEffect, useRef, useState } from 'react';
-import { apiFetch } from '@/lib/core/api-client';
+import { apiFetch, refreshApiSession } from '@/lib/core/api-client';
 
 export default function ProcessingPage() {
   const router = useRouter();
@@ -41,6 +41,9 @@ export default function ProcessingPage() {
         if (!capturedPhoto || !selectedBackground || !selectedPrompt) {
           throw new Error('Missing required data for processing');
         }
+
+        // Fresh session before mutating APIs (avoids stale CDN-cached tokens on Vercel)
+        await refreshApiSession();
 
         // Step 1: Enhance image
         console.log('🎨 Step 1: Calling /api/composit-image...');

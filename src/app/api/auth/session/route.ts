@@ -9,8 +9,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const NO_STORE_HEADERS = {
-  'Cache-Control': 'private, no-store, no-cache, must-revalidate',
+  'Cache-Control': 'private, no-store, no-cache, must-revalidate, max-age=0',
   Pragma: 'no-cache',
+  Expires: '0',
+  // Prevent Vercel / CDN from caching session tokens (stale token → client "expired" error)
+  'CDN-Cache-Control': 'no-store',
+  'Vercel-CDN-Cache-Control': 'no-store',
 };
 
 /**
