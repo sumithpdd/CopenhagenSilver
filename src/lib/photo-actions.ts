@@ -33,10 +33,129 @@ function triggerDownload(href: string, filename: string) {
   document.body.removeChild(link);
 }
 
+export interface PrintPhotoOptions {
+  code?: string;
+  subtitle?: string;
+  /** Show photo code footer — off by default for full-bleed photo prints. */
+  showFooter?: boolean;
+}
+
+/** Print a single photo full-bleed (kiosk / SELPHY-style photo output). */
+export function printPhoto(imageSrc: string, options: PrintPhotoOptions = {}) {
+  const { code, subtitle, showFooter = false } = options;
+  const printWindow = window.open('', '_blank', 'height=900,width=1200');
+  if (!printWindow) return;
+
+  const footerHtml =
+    showFooter && (code || subtitle)
+      ? `
+        <div class="footer">
+          ${code ? `<p class="code">${escapeHtml(code)}</p>` : ''}
+          ${
+            subtitle
+              ? `<p>${escapeHtml(subtitle)}</p>`
+              : '<p>Sitecore Silver • 25 Years of Innovation • Copenhagen 2026</p>'
+          }
+        </div>
+      `
+      : '';
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Sitecore Silver${code ? ` - ${escapeHtml(code)}` : ''}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          @page { size: auto; margin: 0; }
+          html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+          }
+          .print-page {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: stretch;
+          }
+          .photo-wrap {
+            flex: 1 1 auto;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+          }
+          .footer {
+            flex: 0 0 auto;
+            padding: 8px 12px;
+            text-align: center;
+            background: #fff;
+            color: #808080;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+          }
+          .code { font-weight: bold; color: #a0a0a0; margin-bottom: 2px; }
+          @media print {
+            html, body { width: 100%; height: 100%; }
+            .print-page { width: 100%; height: 100%; }
+            .photo-wrap { height: ${showFooter ? 'calc(100% - 36px)' : '100%'}; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-page">
+          <div class="photo-wrap">
+            <img src="${imageSrc}" alt="AI Enhanced photo" />
+          </div>
+          ${footerHtml}
+        </div>
+        <script>
+          window.onload = () => {
+            const img = document.querySelector('img');
+            const runPrint = () => {
+              window.print();
+              window.addEventListener('afterprint', () => window.close());
+            };
+            if (img && !img.complete) {
+              img.onload = runPrint;
+              img.onerror = runPrint;
+            } else {
+              runPrint();
+            }
+          };
+        </script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+/** @deprecated Prefer printPhoto for booth prints. Kept for multi-image layouts. */
 export function printImages(
   images: { src: string; label: string }[],
   footer: { code?: string; subtitle?: string }
 ) {
+  if (images.length === 1) {
+    printPhoto(images[0].src, {
+      code: footer.code,
+      subtitle: footer.subtitle,
+      showFooter: Boolean(footer.code || footer.subtitle),
+    });
+    return;
+  }
+
   const printWindow = window.open('', '_blank', 'height=900,width=1200');
   if (!printWindow) return;
 

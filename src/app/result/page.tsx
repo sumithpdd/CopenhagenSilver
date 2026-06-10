@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePhotoBoothStore } from '@/store/photo-booth';
 import { useEffect, useState } from 'react';
-import { downloadImage, printImages } from '@/lib/photo-actions';
+import { downloadImage, printPhoto } from '@/lib/photo-actions';
 import { BoothLayout } from '@/components/common/BoothLayout';
 
 export default function ResultPage() {
@@ -59,12 +59,7 @@ export default function ResultPage() {
   };
 
   const handlePrint = () => {
-    const images = [];
-    if (hasBoth && originalPhoto) {
-      images.push({ src: originalPhoto, label: 'Original' });
-    }
-    images.push({ src: compositedPhoto!, label: 'AI Enhanced' });
-    printImages(images, { code: photoCode });
+    printPhoto(compositedPhoto!, { code: photoCode });
   };
 
   if (!session || !compositedPhoto || !selectedBackground || !selectedPrompt)

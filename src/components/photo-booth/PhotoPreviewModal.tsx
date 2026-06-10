@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { downloadImage, printImages } from '@/lib/photo-actions';
+import { downloadImage, printPhoto } from '@/lib/photo-actions';
 
 export interface PhotoPreviewData {
   photoCode: string;
@@ -55,12 +55,7 @@ export function PhotoPreviewModal({ photo, onClose }: PhotoPreviewModalProps) {
   };
 
   const handlePrint = () => {
-    const images = [];
-    if (photo.originalPhotoUrl) {
-      images.push({ src: photo.originalPhotoUrl, label: 'Original' });
-    }
-    images.push({ src: photo.compositedPhotoUrl, label: 'AI Enhanced' });
-    printImages(images, { code: photo.photoCode });
+    printPhoto(photo.compositedPhotoUrl, { code: photo.photoCode });
   };
 
   return (

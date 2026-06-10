@@ -10,7 +10,7 @@ import {
   celebrationTaglines,
 } from '@/data/sitecore-facts';
 import { BRAND, BRAND_ASSETS } from '@/lib/branding';
-import { downloadImage, printImages } from '@/lib/photo-actions';
+import { downloadImage, printPhoto } from '@/lib/photo-actions';
 
 export default function SummaryPage() {
   const router = useRouter();
@@ -43,12 +43,7 @@ export default function SummaryPage() {
   if (!session || !composited) return null;
 
   const handlePrintKeepsake = () => {
-    const images = [];
-    if (capturedPhoto && compositedPhotoUrl && capturedPhoto !== compositedPhotoUrl) {
-      images.push({ src: capturedPhoto, label: 'Original' });
-    }
-    images.push({ src: composited, label: 'Your Silver Creation' });
-    printImages(images, {
+    printPhoto(composited, {
       code: photoCode ?? undefined,
       subtitle: `${BRAND.eventTitle} · ${BRAND.eventLocation}`,
     });
