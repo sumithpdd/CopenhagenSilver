@@ -11,7 +11,9 @@ export interface LinkedInCaptionContext {
   promptTitle?: string;
   backgroundName?: string;
   company?: string;
+  companyDescription?: string;
   role?: string;
+  headline?: string;
   photoCode?: string;
 }
 
@@ -51,7 +53,9 @@ async function generateWithGemini(
   const bits = [
     `Name: ${context.userName}`,
     context.company && `Company: ${context.company}`,
+    context.companyDescription && `About company: ${context.companyDescription}`,
     context.role && `Role: ${context.role}`,
+    context.headline && `LinkedIn headline: ${context.headline}`,
     context.promptTitle && `AI transformation: ${context.promptTitle}`,
     context.backgroundName && `Background: ${context.backgroundName}`,
     context.photoCode && `Photo code: ${context.photoCode}`,

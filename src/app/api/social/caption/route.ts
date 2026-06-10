@@ -4,7 +4,7 @@ import { generateLinkedInCaption } from '@/lib/linkedin/caption';
 
 export const dynamic = 'force-dynamic';
 
-/** POST /api/linkedin/caption — alias for social caption (backward compatible). */
+/** POST /api/social/caption — AI post text with hashtags (no LinkedIn OAuth required). */
 export async function POST(request: NextRequest) {
   const auth = requireApiAuth(request);
   if (!auth.authorized) return auth.response;
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       data: { caption },
     });
   } catch (error) {
-    console.error('[linkedin/caption]', error);
+    console.error('[api/social/caption]', error);
     return NextResponse.json(
       {
         success: false,

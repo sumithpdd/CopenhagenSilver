@@ -16,7 +16,9 @@ function ResultSocialShare({
   promptTitle,
   backgroundName,
   company,
+  companyDescription,
   role,
+  headline,
 }: {
   compositedPhoto: string;
   userName: string;
@@ -24,7 +26,9 @@ function ResultSocialShare({
   promptTitle: string;
   backgroundName: string;
   company?: string;
+  companyDescription?: string;
   role?: string;
+  headline?: string;
 }) {
   return (
     <Suspense fallback={null}>
@@ -35,7 +39,9 @@ function ResultSocialShare({
         promptTitle={promptTitle}
         backgroundName={backgroundName}
         company={company}
+        companyDescription={companyDescription}
         role={role}
+        headline={headline}
         returnPath="/result"
       />
     </Suspense>
@@ -214,7 +220,9 @@ export default function ResultPage() {
             promptTitle={selectedPrompt.title}
             backgroundName={selectedBackground.name}
             company={attendeeProfile?.company}
+            companyDescription={attendeeProfile?.companyDescription}
             role={attendeeProfile?.role}
+            headline={attendeeProfile?.headline}
           />
 
           {sitecoreAttendeePage && (

@@ -345,7 +345,9 @@ function AdminPhotoRow({
             userName={photo.userName}
             photoCode={photo.photoCode}
             company={photo.attendeeProfile?.company}
+            companyDescription={photo.attendeeProfile?.companyDescription}
             role={photo.attendeeProfile?.role}
+            headline={photo.attendeeProfile?.headline}
             returnPath="/admin"
             compact
           />

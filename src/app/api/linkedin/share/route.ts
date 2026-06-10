@@ -42,7 +42,9 @@ export async function POST(request: NextRequest) {
       promptTitle?: string;
       backgroundName?: string;
       company?: string;
+      companyDescription?: string;
       role?: string;
+      headline?: string;
       photoCode?: string;
       caption?: string;
     };
@@ -68,7 +70,9 @@ export async function POST(request: NextRequest) {
         promptTitle: body.promptTitle,
         backgroundName: body.backgroundName,
         company: body.company,
+        companyDescription: body.companyDescription,
         role: body.role,
+        headline: body.headline,
         photoCode: body.photoCode,
       }));
 

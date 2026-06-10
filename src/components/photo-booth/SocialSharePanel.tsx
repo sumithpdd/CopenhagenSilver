@@ -14,7 +14,9 @@ interface SocialSharePanelProps {
   promptTitle?: string;
   backgroundName?: string;
   company?: string;
+  companyDescription?: string;
   role?: string;
+  headline?: string;
   /** OAuth return path after LinkedIn connect (default `/result`). */
   returnPath?: string;
   compact?: boolean;
@@ -32,7 +34,9 @@ export function SocialSharePanel({
   promptTitle,
   backgroundName,
   company,
+  companyDescription,
   role,
+  headline,
   returnPath = '/result',
   compact = false,
 }: SocialSharePanelProps) {
@@ -61,7 +65,7 @@ export function SocialSharePanel({
     setLoadingCaption(true);
     setError(null);
     try {
-      const res = await apiFetch('/api/linkedin/caption', {
+      const res = await apiFetch('/api/social/caption', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -70,7 +74,9 @@ export function SocialSharePanel({
           promptTitle,
           backgroundName,
           company,
+          companyDescription,
           role,
+          headline,
         }),
       });
       const json = (await res.json()) as {
@@ -79,35 +85,42 @@ export function SocialSharePanel({
         error?: string;
       };
       if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Failed to generate caption');
+        throw new Error(json.error || 'Failed to generate post text');
       }
       setCaption(json.data?.caption ?? '');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Caption failed');
+      setError(err instanceof Error ? err.message : 'Post text generation failed');
     } finally {
       setLoadingCaption(false);
     }
-  }, [userName, photoCode, promptTitle, backgroundName, company, role]);
+  }, [
+    userName,
+    photoCode,
+    promptTitle,
+    backgroundName,
+    company,
+    companyDescription,
+    role,
+    headline,
+  ]);
 
   useEffect(() => {
     void loadStatus();
   }, [loadStatus]);
 
   useEffect(() => {
+    void loadCaption();
+  }, [loadCaption]);
+
+  useEffect(() => {
     const linkedinParam = searchParams.get('linkedin');
     if (linkedinParam === 'connected') {
-      setMessage('LinkedIn connected — you can post this photo.');
+      setMessage('LinkedIn connected — you can post your photo.');
       void loadStatus();
     } else if (linkedinParam === 'error') {
       setError('LinkedIn connection failed. Try again.');
     }
   }, [searchParams, loadStatus]);
-
-  useEffect(() => {
-    if (linkedInConfigured && connected && !caption && !loadingCaption) {
-      void loadCaption();
-    }
-  }, [linkedInConfigured, connected, caption, loadingCaption, loadCaption]);
 
   const handleConnect = () => {
     window.location.href = `/api/linkedin/auth?returnTo=${encodeURIComponent(returnPath)}`;
@@ -116,8 +129,17 @@ export function SocialSharePanel({
   const handleDisconnect = async () => {
     await fetch('/api/linkedin/disconnect', { method: 'POST' });
     setConnected(false);
-    setCaption('');
     setMessage('LinkedIn disconnected.');
+  };
+
+  const handleCopyText = async () => {
+    if (!caption.trim()) return;
+    try {
+      await navigator.clipboard.writeText(caption);
+      setMessage('Post text copied to clipboard.');
+    } catch {
+      setError('Could not copy — select the text and copy manually.');
+    }
   };
 
   const resolveShareFile = async (): Promise<File | null> => {
@@ -137,7 +159,7 @@ export function SocialSharePanel({
 
   const handleNativeShare = async () => {
     if (!canNativeShare()) {
-      setError('Sharing is not supported in this browser. Use LinkedIn or download the image.');
+      setError('Sharing is not supported in this browser. Copy the text and download the image.');
       return;
     }
     setNativeSharing(true);
@@ -179,7 +201,9 @@ export function SocialSharePanel({
           promptTitle,
           backgroundName,
           company,
+          companyDescription,
           role,
+          headline,
           caption: caption.trim() || undefined,
         }),
       });
@@ -220,26 +244,62 @@ export function SocialSharePanel({
           📱 Share to social
         </p>
         <p className="text-silver-500 text-xs mt-1">
-          Post to LinkedIn with an AI caption, or share via your device (Instagram, Messages, etc.)
+          AI-generated post text from your profile — edit, copy, or share with your photo
         </p>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs text-silver-400 font-semibold uppercase tracking-wide">
+          AI post text
+        </label>
+        <textarea
+          value={caption}
+          onChange={(e) => setCaption(e.target.value)}
+          rows={compact ? 6 : 9}
+          className="w-full rounded-lg bg-black/40 border border-silver-500/40 text-silver-100 text-sm p-3 resize-y min-h-[140px]"
+          placeholder={loadingCaption ? 'Generating post with AI…' : 'Post text'}
+          disabled={loadingCaption || posting}
+        />
+        <p className="text-silver-600 text-xs">
+          Includes #Sitecore #SitecoreSilver #SitecoreCommunity #DigitalExperience #copenhagen
+          and @Sitecore
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            type="button"
+            onClick={() => void loadCaption()}
+            disabled={loadingCaption || posting}
+            className="btn-silver-outline flex-1 py-2 disabled:opacity-50"
+          >
+            {loadingCaption ? 'Generating…' : '✨ Regenerate with AI'}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleCopyText()}
+            disabled={loadingCaption || posting || !caption.trim()}
+            className="btn-silver-outline flex-1 py-2 disabled:opacity-50"
+          >
+            Copy text
+          </button>
+        </div>
       </div>
 
       {canNativeShare() && (
         <button
           type="button"
           onClick={() => void handleNativeShare()}
-          disabled={nativeSharing || posting}
+          disabled={nativeSharing || posting || loadingCaption}
           className="btn-silver-outline w-full py-3 disabled:opacity-50"
         >
-          {nativeSharing ? 'Opening share…' : 'Share via device apps'}
+          {nativeSharing ? 'Opening share…' : 'Share photo + text via device apps'}
         </button>
       )}
 
-      {linkedInConfigured ? (
+      {linkedInConfigured && (
         <div className="space-y-3 pt-2 border-t border-silver-500/20">
           <div className="flex items-start justify-between gap-3">
             <p className="text-[#0A66C2] font-semibold text-xs uppercase tracking-wide flex items-center gap-2">
-              <span aria-hidden>in</span> LinkedIn
+              <span aria-hidden>in</span> Post to LinkedIn
             </p>
             {connected && (
               <button
@@ -261,47 +321,16 @@ export function SocialSharePanel({
               Connect LinkedIn to post
             </button>
           ) : (
-            <>
-              <textarea
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                rows={compact ? 5 : 8}
-                className="w-full rounded-lg bg-black/40 border border-silver-500/40 text-silver-100 text-sm p-3 resize-y min-h-[100px]"
-                placeholder="Generating caption…"
-                disabled={loadingCaption || posting}
-              />
-              <p className="text-silver-600 text-xs">
-                Includes #Sitecore #SitecoreSilver #SitecoreCommunity #DigitalExperience
-                #copenhagen and @Sitecore
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  type="button"
-                  onClick={() => void loadCaption()}
-                  disabled={loadingCaption || posting}
-                  className="btn-silver-outline flex-1 py-2 disabled:opacity-50"
-                >
-                  {loadingCaption ? 'Generating…' : '✨ Regenerate caption'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handlePost()}
-                  disabled={loadingCaption || posting || !caption.trim()}
-                  className="btn-silver flex-1 py-2 disabled:opacity-50 bg-[#0A66C2] hover:bg-[#004182] border-[#0A66C2]"
-                >
-                  {posting ? 'Posting…' : 'Post to LinkedIn'}
-                </button>
-              </div>
-            </>
+            <button
+              type="button"
+              onClick={() => void handlePost()}
+              disabled={loadingCaption || posting || !caption.trim()}
+              className="btn-silver w-full py-2 disabled:opacity-50 bg-[#0A66C2] hover:bg-[#004182] border-[#0A66C2]"
+            >
+              {posting ? 'Posting…' : 'Post to LinkedIn'}
+            </button>
           )}
         </div>
-      ) : (
-        <p className="text-silver-500 text-xs">
-          LinkedIn posting: set{' '}
-          <code className="text-silver-400">LINKEDIN_CLIENT_ID</code> and{' '}
-          <code className="text-silver-400">LINKEDIN_CLIENT_SECRET</code> on the server to
-          enable direct LinkedIn posts.
-        </p>
       )}
 
       {message && <p className="text-green-400 text-xs">{message}</p>}
