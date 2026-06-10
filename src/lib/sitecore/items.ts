@@ -41,6 +41,20 @@ query GetItemById($itemId: ID!, $language: String!) {
 }
 `;
 
+const QUERY_CHILDREN = `
+query GetItemChildren($itemId: ID!, $language: String!) {
+  item(where: { database: "master", itemId: $itemId, language: $language }) {
+    children {
+      nodes {
+        itemId
+        name
+        path
+      }
+    }
+  }
+}
+`;
+
 const CREATE_ITEM_MUTATION = `
 mutation CreateItem(
   $name: String!
@@ -66,14 +80,20 @@ mutation CreateItem(
 }
 `;
 
-const UPDATE_ITEM_MUTATION = `
-mutation UpdateItem($itemId: ID!, $language: String!, $fields: [ItemFieldInput!]!) {
+/** One field per request — avoids batch `fields` variable type issues on some CM builds. */
+const UPDATE_FIELD_MUTATION = `
+mutation UpdateField(
+  $itemId: ID!
+  $language: String!
+  $fieldName: String!
+  $value: String!
+) {
   updateItem(
     input: {
+      database: "master"
       itemId: $itemId
       language: $language
-      version: 1
-      fields: $fields
+      fields: [{ name: $fieldName, value: $value }]
     }
   ) {
     item {
@@ -114,6 +134,47 @@ export async function getItemByPath(
     itemId: normalizeGuid(item.itemId),
     name: item.name,
     path: item.path,
+  };
+}
+
+export function joinSitecoreItemPath(parentPath: string, itemName: string): string {
+  const parent = parentPath.replace(/\/+$/, '');
+  const name = itemName.replace(/^\/+/, '');
+  return `${parent}/${name}`;
+}
+
+/** Find a direct child by item name (case-insensitive). */
+export async function findChildItemByName(
+  parentId: string,
+  name: string,
+  language = 'en'
+): Promise<SitecoreItemRef | null> {
+  const token = await getBearerToken();
+  const target = sanitizeSitecoreItemName(name).toLowerCase();
+
+  const result = await authoringGql<{
+    item?: { children?: { nodes?: SitecoreItemRef[] } };
+  }>(token, QUERY_CHILDREN, {
+    itemId: bareGuid(normalizeGuid(parentId)),
+    language,
+  });
+
+  if (result.errors?.length || !result.data?.item?.children?.nodes) {
+    return null;
+  }
+
+  const match = result.data.item.children.nodes.find(
+    (node) => node.name.toLowerCase() === target
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    itemId: normalizeGuid(match.itemId),
+    name: match.name,
+    path: match.path,
   };
 }
 
@@ -177,29 +238,33 @@ export async function createSitecoreItem(options: {
   };
 }
 
-export async function updateSitecoreItem(options: {
+export async function updateSitecoreItemField(options: {
   itemId: string;
   language?: string;
-  fields: SitecoreFieldInput[];
+  name: string;
+  value: string;
 }): Promise<SitecoreItemRef> {
   const token = await getBearerToken();
   const language = options.language ?? 'en';
 
   const result = await authoringGql<{
     updateItem?: { item?: SitecoreItemRef };
-  }>(token, UPDATE_ITEM_MUTATION, {
+  }>(token, UPDATE_FIELD_MUTATION, {
     itemId: bareGuid(normalizeGuid(options.itemId)),
     language,
-    fields: options.fields,
+    fieldName: options.name,
+    value: options.value,
   });
 
   if (result.errors?.length) {
-    throw new Error(result.errors.map((e) => e.message).join('; '));
+    throw new Error(
+      `Field "${options.name}": ${result.errors.map((e) => e.message).join('; ')}`
+    );
   }
 
   const item = result.data?.updateItem?.item;
   if (!item) {
-    throw new Error('updateItem returned no item');
+    throw new Error(`updateItem returned no item for field "${options.name}"`);
   }
 
   return {
@@ -207,4 +272,26 @@ export async function updateSitecoreItem(options: {
     name: item.name,
     path: item.path,
   };
+}
+
+export async function updateSitecoreItem(options: {
+  itemId: string;
+  language?: string;
+  fields: SitecoreFieldInput[];
+}): Promise<SitecoreItemRef> {
+  if (options.fields.length === 0) {
+    throw new Error('No fields to update');
+  }
+
+  let last: SitecoreItemRef | null = null;
+  for (const field of options.fields) {
+    last = await updateSitecoreItemField({
+      itemId: options.itemId,
+      language: options.language,
+      name: field.name,
+      value: field.value,
+    });
+  }
+
+  return last!;
 }

@@ -140,12 +140,15 @@ SITECORE_CLIENT_ID=automation_client_id
 SITECORE_CLIENT_SECRET=automation_client_secret
 SITECORE_ATTENDEE_TEMPLATE_ID={GUID-of-SitecoreSilverAttendeeProfile}
 SITECORE_ATTENDEES_PARENT_PATH=/sitecore/content/sitecoresilver/sitecoresilver/Home/SilverAttendees
+SITECORE_ATTENDEE_SYNC=true
 NEXT_PUBLIC_ENABLE_SITECORE_ATTENDEE_PAGES=true
 ```
 
 Get OAuth credentials from **XM Cloud Deploy → Credentials → Environment** (Automation client + **CM hostname** for `XMC_HOST`).
 
-Verify config: `GET /api/sitecore/status` → `attendeePageSync: true`.
+**When it runs:** After AI compositing, `POST /api/upload-photo` creates (or updates) a `SitecoreSilverAttendeeProfile` child under `SilverAttendees` via the Authoring GraphQL API. The result screen shows the CM path and an **Open in Content Editor** link when sync succeeds.
+
+Verify config: `GET /api/sitecore/status` → `attendeePageSync: true`. After a test photo, check the terminal for `✅ [SITECORE] Attendee page created …` or review the error in logs.
 
 ---
 

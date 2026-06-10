@@ -87,10 +87,12 @@ export function getDefaultAppConfig(): AppConfig {
         sitecoreBrandRules
       ),
       summaryPage: parseBoolEnv(process.env.NEXT_PUBLIC_ENABLE_SUMMARY, true),
-      sitecoreAttendeePages: parseBoolEnv(
-        process.env.NEXT_PUBLIC_ENABLE_SITECORE_ATTENDEE_PAGES,
-        process.env.APP_PRESET === 'sitecore-silver'
-      ),
+      sitecoreAttendeePages:
+        parseBoolEnv(process.env.SITECORE_ATTENDEE_SYNC, false) ||
+        parseBoolEnv(
+          process.env.NEXT_PUBLIC_ENABLE_SITECORE_ATTENDEE_PAGES,
+          process.env.APP_PRESET === 'sitecore-silver'
+        ),
     },
     brandRules: {
       enabled: sitecoreBrandRules,

@@ -26,6 +26,7 @@ export interface SitecoreAttendeePageResult {
   name: string;
   aiQuote: string;
   created: boolean;
+  contentEditorUrl?: string | null;
 }
 
 // Photo Models

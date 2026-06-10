@@ -94,9 +94,12 @@ export default function ProcessingPage() {
         uploadFormData.append('consentTermsAccepted', String(consentTermsAccepted));
         uploadFormData.append('consentGalleryShare', String(consentGalleryShare));
         uploadFormData.append('syncToSitecore', 'true');
+        uploadFormData.append(
+          'fullName',
+          attendeeProfile?.fullName ?? session!.userName
+        );
 
         if (attendeeProfile) {
-          uploadFormData.append('fullName', attendeeProfile.fullName);
           if (attendeeProfile.company) {
             uploadFormData.append('company', attendeeProfile.company);
           }

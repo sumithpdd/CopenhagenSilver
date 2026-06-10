@@ -131,9 +131,9 @@ export default function ResultPage() {
           )}
 
           {sitecoreAttendeePage && (
-            <div className="brand-card p-6 space-y-2 text-sm">
+            <div className="brand-card p-6 space-y-3 text-sm">
               <p className="text-silver-400 font-semibold uppercase tracking-wide">
-                Published to Sitecore
+                {sitecoreAttendeePage.created ? 'Created in Sitecore' : 'Updated in Sitecore'}
               </p>
               <p className="font-mono text-xs text-silver-300 break-all">
                 {sitecoreAttendeePage.path}
@@ -142,6 +142,16 @@ export default function ResultPage() {
                 <p className="text-silver-200 italic leading-relaxed">
                   &ldquo;{sitecoreAttendeePage.aiQuote}&rdquo;
                 </p>
+              )}
+              {sitecoreAttendeePage.contentEditorUrl && (
+                <a
+                  href={sitecoreAttendeePage.contentEditorUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-silver-outline text-xs inline-flex"
+                >
+                  Open in Content Editor
+                </a>
               )}
             </div>
           )}

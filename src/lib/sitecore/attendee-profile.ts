@@ -7,16 +7,20 @@ import { isSitecoreConfigured } from '@/lib/core/runtime-mode';
 import type { AttendeeProfile } from '@/types';
 import {
   createSitecoreItem,
+  findChildItemByName,
   getItemByPath,
+  joinSitecoreItemPath,
   sanitizeSitecoreItemName,
-  updateSitecoreItem,
+  updateSitecoreItemField,
   type SitecoreFieldInput,
+  type SitecoreItemRef,
 } from '@/lib/sitecore/items';
 
 import {
   DEFAULT_ATTENDEES_PARENT_PATH,
   DEFAULT_ATTENDEE_TEMPLATE_ID,
 } from '@/lib/sitecore/constants';
+import { getSitecoreContentEditorUrl } from '@/lib/sitecore/cm-url';
 
 export interface CreateAttendeePageInput {
   profile: AttendeeProfile;
@@ -32,6 +36,8 @@ export interface CreateAttendeePageResult {
   name: string;
   aiQuote: string;
   created: boolean;
+  /** XM Cloud Content Editor deep link (when XMC_HOST is set). */
+  contentEditorUrl?: string | null;
 }
 
 export function isAttendeePageSyncConfigured(): boolean {
@@ -52,7 +58,7 @@ export function getAttendeeTemplateId(): string {
   );
 }
 
-/** Image fields on SitecoreSilverAttendeeProfile expect ImageField JSON, not plain URLs. */
+/** ImageField JSON for external URLs (fallback when plain URL fails). */
 function formatSitecoreImageFieldValue(url: string): string {
   return JSON.stringify({ src: url, alt: '', mediaUrl: url });
 }
@@ -66,8 +72,8 @@ function buildAttendeeFields(
 ): SitecoreFieldInput[] {
   const fields: SitecoreFieldInput[] = [
     { name: 'Name', value: profile.fullName },
-    { name: 'OriginalPhoto', value: formatSitecoreImageFieldValue(originalPhotoUrl) },
-    { name: 'EnhancedPhoto', value: formatSitecoreImageFieldValue(enhancedPhotoUrl) },
+    { name: 'OriginalPhoto', value: originalPhotoUrl },
+    { name: 'EnhancedPhoto', value: enhancedPhotoUrl },
     { name: 'AIQuote', value: aiQuote },
     { name: 'PhotoCode', value: photoCode },
   ];
@@ -85,9 +91,129 @@ function buildAttendeeFields(
   return fields;
 }
 
+function isDuplicateItemNameError(message: string): boolean {
+  return /duplicate|already exists|same name|already defined|is already defined/i.test(
+    message
+  );
+}
+
+async function findExistingAttendeeItem(
+  parentId: string,
+  parentPath: string,
+  language: string,
+  displayName: string,
+  photoCodeName: string
+): Promise<SitecoreItemRef | null> {
+  const names = [displayName, photoCodeName].filter(Boolean);
+  const seen = new Set<string>();
+
+  for (const name of names) {
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const byPath = await getItemByPath(
+      joinSitecoreItemPath(parentPath, name),
+      language
+    );
+    if (byPath) return byPath;
+
+    const byChild = await findChildItemByName(parentId, name, language);
+    if (byChild) return byChild;
+  }
+
+  return null;
+}
+
+function attendeeResult(
+  item: { itemId: string; path: string; name: string },
+  aiQuote: string,
+  created: boolean
+): CreateAttendeePageResult {
+  return {
+    itemId: item.itemId,
+    path: item.path,
+    name: item.name,
+    aiQuote,
+    created,
+    contentEditorUrl: getSitecoreContentEditorUrl(item.itemId),
+  };
+}
+
+async function updateFieldWithPhotoFallback(
+  itemId: string,
+  language: string,
+  fieldName: string,
+  plainUrl: string
+) {
+  try {
+    return await updateSitecoreItemField({
+      itemId,
+      language,
+      name: fieldName,
+      value: plainUrl,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (
+      fieldName !== 'OriginalPhoto' &&
+      fieldName !== 'EnhancedPhoto' &&
+      !/field|type|value/i.test(message)
+    ) {
+      throw error;
+    }
+    return await updateSitecoreItemField({
+      itemId,
+      language,
+      name: fieldName,
+      value: formatSitecoreImageFieldValue(plainUrl),
+    });
+  }
+}
+
+async function updateAttendeeFields(
+  itemId: string,
+  language: string,
+  fields: SitecoreFieldInput[],
+  photoUrls: { original: string; enhanced: string }
+) {
+  let last: { itemId: string; path: string; name: string } | null = null;
+
+  for (const field of fields) {
+    if (field.name === 'OriginalPhoto') {
+      last = await updateFieldWithPhotoFallback(
+        itemId,
+        language,
+        field.name,
+        photoUrls.original
+      );
+    } else if (field.name === 'EnhancedPhoto') {
+      last = await updateFieldWithPhotoFallback(
+        itemId,
+        language,
+        field.name,
+        photoUrls.enhanced
+      );
+    } else {
+      last = await updateSitecoreItemField({
+        itemId,
+        language,
+        name: field.name,
+        value: field.value,
+      });
+    }
+  }
+
+  if (!last) {
+    throw new Error('No fields were updated');
+  }
+
+  return last;
+}
+
 /**
  * Creates a new attendee item or updates an existing one at the same path.
- * Item name defaults to full name; duplicates get " - {photoCode}" suffix.
+ * Item name defaults to full name; duplicates get photo code as item name.
  */
 export async function createOrUpdateAttendeePage(
   input: CreateAttendeePageInput
@@ -126,8 +252,11 @@ export async function createOrUpdateAttendeePage(
   const displayName = sanitizeSitecoreItemName(input.profile.fullName);
   const photoCodeName = sanitizeSitecoreItemName(input.photoCode);
 
-  // Prefer human-readable path: /SilverAttendees/Sumith Damodaran
-  // If that name already exists (repeat attendee), create /SilverAttendees/SILVER…
+  const photoUrls = {
+    original: input.originalPhotoUrl,
+    enhanced: input.enhancedPhotoUrl,
+  };
+
   const createAndFill = async (name: string) => {
     const created = await createSitecoreItem({
       name,
@@ -135,52 +264,57 @@ export async function createOrUpdateAttendeePage(
       parentId: parent.itemId,
       language,
     });
-    const updated = await updateSitecoreItem({
-      itemId: created.itemId,
-      language,
-      fields,
-    });
-    return updated;
+    return await updateAttendeeFields(created.itemId, language, fields, photoUrls);
   };
 
+  const updateExisting = async (existing: SitecoreItemRef) => {
+    const updated = await updateAttendeeFields(
+      existing.itemId,
+      language,
+      fields,
+      photoUrls
+    );
+    return attendeeResult(updated, aiQuote, false);
+  };
+
+  const existing = await findExistingAttendeeItem(
+    parent.itemId,
+    parentPath,
+    language,
+    displayName,
+    photoCodeName
+  );
+  if (existing) {
+    return await updateExisting(existing);
+  }
+
+  const primaryName = displayName || photoCodeName;
+
   try {
-    const item = await createAndFill(displayName || photoCodeName);
-    return {
-      itemId: item.itemId,
-      path: item.path,
-      name: item.name,
-      aiQuote,
-      created: true,
-    };
+    const item = await createAndFill(primaryName);
+    return attendeeResult(item, aiQuote, true);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (!/duplicate|already exists|same name/i.test(message)) {
+    if (!isDuplicateItemNameError(message)) {
       throw error;
     }
 
-    const existing = await getItemByPath(`${parentPath}/${displayName}`, language);
-    if (existing) {
-      const updated = await updateSitecoreItem({
-        itemId: existing.itemId,
-        language,
-        fields,
-      });
-      return {
-        itemId: updated.itemId,
-        path: updated.path,
-        name: updated.name,
-        aiQuote,
-        created: false,
-      };
+    const existingOnRace = await findExistingAttendeeItem(
+      parent.itemId,
+      parentPath,
+      language,
+      displayName,
+      photoCodeName
+    );
+    if (existingOnRace) {
+      return await updateExisting(existingOnRace);
     }
 
-    const item = await createAndFill(photoCodeName);
-    return {
-      itemId: item.itemId,
-      path: item.path,
-      name: item.name,
-      aiQuote,
-      created: true,
-    };
+    if (photoCodeName && photoCodeName !== primaryName) {
+      const item = await createAndFill(photoCodeName);
+      return attendeeResult(item, aiQuote, true);
+    }
+
+    throw error;
   }
 }
