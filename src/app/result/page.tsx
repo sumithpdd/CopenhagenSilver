@@ -1,16 +1,51 @@
 'use client';
 
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePhotoBoothStore } from '@/store/photo-booth';
-import { useEffect, useState } from 'react';
 import { downloadImage, printPhoto } from '@/lib/photo-actions';
 import { fetchCompositedPhoto } from '@/lib/composit-client';
 import { isApiSessionError } from '@/lib/core/api-client';
 import { BoothLayout } from '@/components/common/BoothLayout';
+import { LinkedInSharePanel } from '@/components/photo-booth/LinkedInSharePanel';
+import { useAppConfig } from '@/components/providers/app-config-provider';
+
+function ResultLinkedInShare({
+  compositedPhoto,
+  userName,
+  photoCode,
+  promptTitle,
+  backgroundName,
+  company,
+  role,
+}: {
+  compositedPhoto: string;
+  userName: string;
+  photoCode: string;
+  promptTitle: string;
+  backgroundName: string;
+  company?: string;
+  role?: string;
+}) {
+  return (
+    <Suspense fallback={null}>
+      <LinkedInSharePanel
+        compositedPhoto={compositedPhoto}
+        userName={userName}
+        photoCode={photoCode}
+        promptTitle={promptTitle}
+        backgroundName={backgroundName}
+        company={company}
+        role={role}
+      />
+    </Suspense>
+  );
+}
 
 export default function ResultPage() {
   const router = useRouter();
+  const { features } = useAppConfig();
   const session = usePhotoBoothStore((state) => state.session);
   const capturedPhoto = usePhotoBoothStore((state) => state.capturedPhoto);
   const compositedPhotoUrl = usePhotoBoothStore((state) => state.compositedPhotoUrl);
@@ -19,6 +54,7 @@ export default function ResultPage() {
   const sitecoreSyncError = usePhotoBoothStore((state) => state.sitecoreSyncError);
   const selectedBackground = usePhotoBoothStore((state) => state.selectedBackground);
   const selectedPrompt = usePhotoBoothStore((state) => state.selectedPrompt);
+  const attendeeProfile = usePhotoBoothStore((state) => state.attendeeProfile);
   const resetSession = usePhotoBoothStore((state) => state.resetSession);
   const setCompositedPreview = usePhotoBoothStore((state) => state.setCompositedPreview);
 
@@ -171,6 +207,18 @@ export default function ResultPage() {
 
           {actionError && (
             <p className="text-red-400 text-sm text-center">{actionError}</p>
+          )}
+
+          {features.linkedInShare && (
+            <ResultLinkedInShare
+              compositedPhoto={compositedPhoto}
+              userName={session.userName}
+              photoCode={photoCode}
+              promptTitle={selectedPrompt.title}
+              backgroundName={selectedBackground.name}
+              company={attendeeProfile?.company}
+              role={attendeeProfile?.role}
+            />
           )}
 
           {sitecoreAttendeePage && (

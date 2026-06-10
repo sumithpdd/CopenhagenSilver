@@ -31,6 +31,8 @@ export interface FeatureFlags {
   summaryPage: boolean;
   /** Show attendee profile fields and sync to Sitecore CM on upload. */
   sitecoreAttendeePages: boolean;
+  /** LinkedIn OAuth share with AI caption (requires LINKEDIN_CLIENT_ID). */
+  linkedInShare: boolean;
 }
 
 export interface BrandRulesConfig {
@@ -93,6 +95,9 @@ export function getDefaultAppConfig(): AppConfig {
           process.env.NEXT_PUBLIC_ENABLE_SITECORE_ATTENDEE_PAGES,
           process.env.APP_PRESET === 'sitecore-silver'
         ),
+      linkedInShare:
+        parseBoolEnv(process.env.NEXT_PUBLIC_ENABLE_LINKEDIN_SHARE, false) ||
+        Boolean(process.env.LINKEDIN_CLIENT_ID?.trim()),
     },
     brandRules: {
       enabled: sitecoreBrandRules,
@@ -130,6 +135,7 @@ export function getSitecoreSilverPreset(): Partial<AppConfig> {
       sitecoreMarketing: true,
       summaryPage: true,
       sitecoreAttendeePages: true,
+      linkedInShare: true,
     },
     brandRules: {
       enabled: true,
