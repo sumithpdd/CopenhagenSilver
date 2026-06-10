@@ -17,13 +17,7 @@ const NO_STORE_HEADERS = {
   'Vercel-CDN-Cache-Control': 'no-store',
 };
 
-/**
- * GET /api/auth/session
- * Issues an httpOnly session cookie for client-side API calls when API_SECRET is set.
- */
-export async function GET(_request: NextRequest) {
-  const secret = process.env.API_SECRET?.trim();
-
+function issueSessionResponse(secret: string | undefined): NextResponse {
   if (!secret) {
     return NextResponse.json(
       {
@@ -41,6 +35,7 @@ export async function GET(_request: NextRequest) {
       data: {
         secured: true,
         expiresInHours: 4,
+        issuedAt: Date.now(),
         sessionToken: token,
       },
     },
@@ -57,6 +52,21 @@ export async function GET(_request: NextRequest) {
   });
 
   return response;
+}
+
+/**
+ * GET /api/auth/session — open mode check only; prefer POST (not CDN-cached on Vercel).
+ */
+export async function GET(_request: NextRequest) {
+  return issueSessionResponse(process.env.API_SECRET?.trim());
+}
+
+/**
+ * POST /api/auth/session
+ * Issues a fresh session token. POST avoids Vercel edge cache serving stale GET responses.
+ */
+export async function POST(_request: NextRequest) {
+  return issueSessionResponse(process.env.API_SECRET?.trim());
 }
 
 export async function HEAD() {

@@ -21,18 +21,25 @@ function resetSessionState(): void {
   sessionInitPromise = null;
 }
 
-async function fetchApiSession(attempt = 0): Promise<void> {
-  const maxAttempts = 3;
-  const bust = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+/** True for booth API session failures (API_SECRET flow), not Gemini/Firebase keys. */
+export function isApiSessionError(message: string): boolean {
+  return /API session|Could not obtain API session|Unauthorized.*session/i.test(
+    message
+  );
+}
 
-  const res = await fetch(`/api/auth/session?_=${bust}`, {
+async function fetchApiSession(): Promise<void> {
+  // POST — Vercel CDN was caching GET /api/auth/session and returning expired tokens
+  const res = await fetch('/api/auth/session', {
+    method: 'POST',
     credentials: 'include',
     cache: 'no-store',
     headers: {
+      'Content-Type': 'application/json',
       'Cache-Control': 'no-cache, no-store',
       Pragma: 'no-cache',
-      'X-Session-Bust': bust,
     },
+    body: '{}',
   });
 
   if (!res.ok) {
@@ -44,7 +51,11 @@ async function fetchApiSession(attempt = 0): Promise<void> {
 
   const body = (await res.json()) as {
     success?: boolean;
-    data?: { secured?: boolean; sessionToken?: string };
+    data?: {
+      secured?: boolean;
+      sessionToken?: string;
+      issuedAt?: number;
+    };
   };
 
   apiSecured = body.data?.secured ?? false;
@@ -54,14 +65,12 @@ async function fetchApiSession(attempt = 0): Promise<void> {
   }
 
   if (body.data?.sessionToken) {
-    // CDN/browser may return a cached session response — retry with a new bust key
-    if (!isSessionTokenFresh(body.data.sessionToken)) {
-      if (attempt + 1 < maxAttempts) {
-        return fetchApiSession(attempt + 1);
-      }
-      throw new Error('API session token expired — retry');
-    }
     sessionToken = body.data.sessionToken;
+    if (!isSessionTokenFresh(body.data.sessionToken)) {
+      console.warn(
+        '[api-client] Session token from server is near expiry; mutating calls will refresh on 401'
+      );
+    }
   } else if (!body.data?.secured) {
     sessionToken = null;
   }
@@ -129,7 +138,7 @@ export async function apiFetch(
 
   const response = await performFetch();
 
-  // Stale cached session or expired token — refresh once and retry
+  // Stale session — refresh once and retry
   if (mutating && response.status === 401) {
     resetSessionState();
     await ensureApiSession({ force: true });

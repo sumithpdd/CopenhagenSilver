@@ -3,8 +3,12 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePhotoBoothStore } from '@/store/photo-booth';
-import { useEffect, useRef, useState } from 'react';
-import { apiFetch, refreshApiSession } from '@/lib/core/api-client';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  apiFetch,
+  isApiSessionError,
+  refreshApiSession,
+} from '@/lib/core/api-client';
 
 export default function ProcessingPage() {
   const router = useRouter();
@@ -19,6 +23,7 @@ export default function ProcessingPage() {
   const setSitecoreAttendeePage = usePhotoBoothStore((state) => state.setSitecoreAttendeePage);
 
   const [error, setError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const processingStarted = useRef(false);
 
   // Redirect if missing required data
@@ -28,10 +33,9 @@ export default function ProcessingPage() {
     }
   }, [session, capturedPhoto, selectedBackground, selectedPrompt, router]);
 
-  // Process image with Sharp enhancement
-  useEffect(() => {
-    async function processImage() {
+  const runProcessing = useCallback(async () => {
       try {
+        setError(null);
         console.log('🚀 PROCESSING START');
         console.log('📸 Photo:', capturedPhoto ? 'YES' : 'NO');
         console.log('🎭 Background:', selectedBackground?.name || 'NONE');
@@ -157,26 +161,14 @@ export default function ProcessingPage() {
         console.error('Full error:', err);
         setError(errorMsg);
 
-        setTimeout(() => {
-          router.push('/prompts');
-        }, 3000);
+        if (!isApiSessionError(errorMsg)) {
+          setTimeout(() => {
+            router.push('/prompts');
+          }, 3000);
+        }
+      } finally {
+        setRetrying(false);
       }
-    }
-
-    if (capturedPhoto && selectedBackground && selectedPrompt) {
-      if (processingStarted.current) {
-        return;
-      }
-      processingStarted.current = true;
-      console.log('📊 Dependencies ready, starting processImage()');
-      processImage();
-    } else {
-      console.log('⏳ Waiting for dependencies:', {
-        photo: !!capturedPhoto,
-        bg: !!selectedBackground,
-        prompt: !!selectedPrompt,
-      });
-    }
   }, [
     capturedPhoto,
     selectedBackground,
@@ -189,6 +181,23 @@ export default function ProcessingPage() {
     attendeeProfile,
     setSitecoreAttendeePage,
   ]);
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    processingStarted.current = true;
+    await runProcessing();
+  };
+
+  useEffect(() => {
+    if (capturedPhoto && selectedBackground && selectedPrompt) {
+      if (processingStarted.current) {
+        return;
+      }
+      processingStarted.current = true;
+      console.log('📊 Dependencies ready, starting processImage()');
+      void runProcessing();
+    }
+  }, [capturedPhoto, selectedBackground, selectedPrompt, runProcessing]);
 
   if (!session || !capturedPhoto || !selectedBackground || !selectedPrompt)
     return null;
@@ -211,12 +220,34 @@ export default function ProcessingPage() {
                 <h2 className="text-3xl md:text-4xl font-bold mb-2 text-red-400">
                   Processing Error
                 </h2>
-                <p className="text-silver-300 text-lg mb-4">
-                  {error}
-                </p>
-                <p className="text-silver-400">
-                  Returning to prompt selection...
-                </p>
+                <p className="text-silver-300 text-lg mb-4">{error}</p>
+                {isApiSessionError(error) && (
+                  <p className="text-silver-400 text-sm max-w-md mx-auto mb-4">
+                    This is the booth API security session (<code className="text-silver-300">API_SECRET</code>
+                    ), not your Gemini or Sitecore keys. Use Retry to fetch a fresh session.
+                  </p>
+                )}
+                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                  <button
+                    type="button"
+                    onClick={() => void handleRetry()}
+                    disabled={retrying}
+                    className="px-6 py-3 rounded-lg bg-silver-400 text-sc-bg font-semibold hover:bg-silver-300 disabled:opacity-50 min-w-[10rem]"
+                  >
+                    {retrying ? 'Retrying…' : 'Retry processing'}
+                  </button>
+                  <Link
+                    href="/prompts"
+                    className="px-6 py-3 rounded-lg border border-silver-400 text-silver-300 hover:bg-silver-800 min-w-[10rem]"
+                  >
+                    Back to prompts
+                  </Link>
+                </div>
+                {!isApiSessionError(error) && (
+                  <p className="text-silver-500 text-sm mt-4">
+                    Returning to prompt selection…
+                  </p>
+                )}
               </div>
             </div>
           ) : (
