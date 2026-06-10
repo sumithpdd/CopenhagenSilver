@@ -1,6 +1,7 @@
 import { initializeApp, getApps, cert, type ServiceAccount } from 'firebase-admin/app';
-import { getFirestore, Firestore, DocumentData } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore, Firestore, DocumentData } from 'firebase-admin/firestore';
 import { getStorage, Storage } from 'firebase-admin/storage';
+import { parseAttendeeProfileFromDoc } from '@/lib/firebase-user';
 
 let db: Firestore | null = null;
 let storage: Storage | null = null;
@@ -97,11 +98,16 @@ function toIsoDate(value: unknown): string {
 
 /** API-safe photo shape (JSON-serializable). */
 export function docToPhoto(id: string, data: DocumentData) {
+  const attendeeProfile = parseAttendeeProfileFromDoc(
+    data.attendeeProfile as Record<string, unknown> | undefined
+  );
+
   return {
     id,
     sessionId: String(data.sessionId ?? ''),
     userName: String(data.userName ?? 'Guest'),
     userEmail: data.userEmail ? String(data.userEmail) : undefined,
+    ...(attendeeProfile && { attendeeProfile }),
     originalPhotoUrl: String(data.originalPhotoUrl ?? ''),
     compositedPhotoUrl: String(data.compositedPhotoUrl ?? ''),
     backgroundId: String(data.backgroundId ?? ''),

@@ -55,6 +55,8 @@ export interface PhotoBoothPhoto {
   sessionId: string;
   userName: string;
   userEmail?: string;
+  /** Full attendee profile from input form (also on photobooth_sessions). */
+  attendeeProfile?: AttendeeProfile;
   originalPhotoUrl: string;
   compositedPhotoUrl: string;
   backgroundId: string;

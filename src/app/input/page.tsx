@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { userInputSchema, type UserInputFormData } from '@/lib/validators';
 import { usePhotoBoothStore } from '@/store/photo-booth';
+import { apiPostJson } from '@/lib/core/api-client';
 import { BoothLayout } from '@/components/common/BoothLayout';
 import { useAppConfig } from '@/components/providers/app-config-provider';
 import { GdprConsentBlock } from '@/components/common/GdprConsentBlock';
@@ -34,7 +35,7 @@ export default function InputPage() {
     resolver: zodResolver(userInputSchema),
   });
 
-  const onSubmit = (data: UserInputFormData) => {
+  const onSubmit = async (data: UserInputFormData) => {
     if (!termsAccepted) {
       setConsentError('Please accept the Terms & Privacy Notice to continue.');
       return;
@@ -48,6 +49,24 @@ export default function InputPage() {
       linkedInUrl: data.linkedInUrl,
       headline: data.headline,
     });
+
+    const session = usePhotoBoothStore.getState().session;
+    const profile = usePhotoBoothStore.getState().attendeeProfile;
+    if (session && profile) {
+      try {
+        await apiPostJson('/api/session', {
+          sessionId: session.sessionId,
+          userName: session.userName,
+          userEmail: session.userEmail ?? '',
+          attendeeProfile: profile,
+          consentTermsAccepted: termsAccepted,
+          consentGalleryShare: galleryShare,
+        });
+      } catch {
+        // Continue booth flow — profile is saved again on photo upload
+      }
+    }
+
     router.push('/camera');
   };
 

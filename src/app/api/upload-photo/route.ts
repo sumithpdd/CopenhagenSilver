@@ -3,6 +3,10 @@ import { resolveAppConfig } from '@/lib/core/app-config';
 import { requireApiAuth } from '@/lib/core/api-auth';
 import { docToPhoto, getFirebaseAdmin } from '@/lib/firebase-admin';
 import {
+  buildAttendeeProfileDoc,
+  upsertBoothSession,
+} from '@/lib/firebase-user';
+import {
   createOrUpdateAttendeePage,
   isAttendeePageSyncConfigured,
 } from '@/lib/sitecore/attendee-profile';
@@ -110,11 +114,13 @@ export async function POST(request: NextRequest) {
     const compositedPhotoUrl = await compositedFile.publicUrl();
 
     const visibility = consentGalleryShare ? 'public' : 'hidden';
+    const profile = parseAttendeeProfile(formData, userName);
 
     const photoDoc = {
       sessionId,
       userName,
       userEmail,
+      attendeeProfile: buildAttendeeProfileDoc(profile),
       originalPhotoUrl,
       compositedPhotoUrl,
       backgroundId,
@@ -125,6 +131,7 @@ export async function POST(request: NextRequest) {
       visibility,
       moderationStatus: 'approved' as const,
       consentGalleryShare,
+      consentTermsAccepted,
       consentTermsAcceptedAt: now,
       metadata: { processingTime: 0 },
     };
@@ -139,7 +146,6 @@ export async function POST(request: NextRequest) {
 
     if (syncToSitecore && isAttendeePageSyncConfigured()) {
       try {
-        const profile = parseAttendeeProfile(formData, userName);
         sitecoreAttendeePage = await createOrUpdateAttendeePage({
           profile,
           photoCode,
@@ -160,6 +166,25 @@ export async function POST(request: NextRequest) {
     } else if (syncToSitecore && !isAttendeePageSyncConfigured()) {
       sitecoreSyncError =
         'Sitecore attendee sync not configured (SITECORE_CLIENT_ID, SITECORE_CLIENT_SECRET, XMC_HOST).';
+    }
+
+    try {
+      await upsertBoothSession(db, {
+        sessionId,
+        userName,
+        userEmail,
+        attendeeProfile: profile,
+        consentTermsAccepted,
+        consentGalleryShare,
+        consentTermsAcceptedAt: now,
+        latestPhotoId: photoId,
+        latestPhotoCode: photoCode,
+        latestBackgroundId: backgroundId,
+        latestPromptId: promptId,
+        sitecoreAttendeePath: sitecoreAttendeePage?.path,
+      });
+    } catch (sessionError) {
+      console.error('⚠️ [FIREBASE] Session profile save failed:', sessionError);
     }
 
     return NextResponse.json({
